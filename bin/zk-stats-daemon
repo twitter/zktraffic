@@ -1,0 +1,89 @@
+import os
+import signal
+import socket
+import time
+
+from zktraffic.endpoints.stats_server import StatsServer
+
+from twitter.common import app, log
+from twitter.common.http import HttpServer
+
+
+app.add_option("--iface",
+               dest="iface",
+               metavar="IFACE",
+               default="eth0",
+               help="interface to capture packets from")
+app.add_option("--http-port",
+               dest="http_port",
+               metavar="HTTPPORT",
+               type=int,
+               default=7070,
+               help="listen port for http endpoints")
+app.add_option("--zookeeper-port",
+               type=int,
+               default=2181,
+               help="ZK's client port (from which to sniff)")
+app.add_option("--aggregation-depth",
+               dest="aggregation_depth",
+               type=int,
+               default=0,
+               help="aggregate paths up to a certain depth")
+app.add_option("--max-results",
+               dest="max_results",
+               type=int,
+               default=10,
+               help="top number of results to be exported")
+app.add_option("--refresh-time",
+               dest="refresh_time",
+               type=int,
+               default=0,
+               help="refresh time in the generated html")
+app.add_option("--niceness",
+               dest="niceness",
+               type=int,
+               default=0,
+               help="set the niceness")
+app.add_option("--max-queued-requests",
+               type=int,
+               default=400000,
+               help="max queued requests")
+app.add_option("--max-queued-replies",
+               type=int,
+               default=400000,
+               help="max queued replies")
+app.add_option("--max-queued-events",
+               type=int,
+               default=400000,
+               help="max queued events")
+
+
+class Server(HttpServer):
+  pass
+
+
+def main(_, opts):
+  stats = StatsServer(opts.iface,
+                      opts.zookeeper_port,
+                      opts.aggregation_depth,
+                      opts.max_results,
+                      opts.max_queued_requests,
+                      opts.max_queued_replies,
+                      opts.max_queued_events)
+
+  log.info("Starting with opts: %s" % (opts))
+
+  signal.signal(signal.SIGINT, signal.SIG_DFL)
+
+  if opts.niceness >= 0:
+    os.nice(opts.niceness)
+
+  server = Server()
+  server.mount_routes(stats)
+  server.run(socket.gethostname(), opts.http_port)
+
+  while True:
+    time.sleep(10)
+
+
+app.main()

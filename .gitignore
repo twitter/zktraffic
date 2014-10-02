@@ -1,0 +1,5 @@
+*~
+*.pyc
+zktraffic.egg-info/
+build/
+dist/
