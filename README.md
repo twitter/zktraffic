@@ -1,9 +1,18 @@
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Table of Contents**  *generated with [DocToc](http://doctoc.herokuapp.com/)*
+
+- [ZKTraffic](#zktraffic)
+    - [tl;dr](#tldr)
+    - [Installing](#installing)
+    - [What is ZKTraffic?](#what-is-zktraffic)
+    - [Dependencies](#dependencies)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 # ZKTraffic #
 
-[TOC]
-
-
-## tl;dr ##
+### tl;dr ###
 
 ZooKeeper protocol analyzer and stats gathering daemon
 
