@@ -1,7 +1,14 @@
+#!/usr/bin/env python
+
 import os
 import signal
 import socket
+import sys
 import time
+
+if os.getenv("ZKTRAFFIC_SOURCE") is not None:
+  sys.path.insert(0,  "..")
+  sys.path.insert(0, ".")
 
 from zktraffic.endpoints.stats_server import StatsServer
 

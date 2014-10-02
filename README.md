@@ -1,4 +1,4 @@
-# Zktraffic #
+# ZKTraffic #
 
 [TOC]
 
@@ -7,7 +7,29 @@
 
 ZooKeeper protocol analyzer and stats gathering daemon
 
-### What is Zktraffic? ###
+### Installing ###
+
+You can install ZKTraffic via pip:
+
+```
+$ pip install zktraffic
+```
+
+Or run it from source (if you have the dependencies installed, see below):
+
+```
+$ git clone https://github.com/twitter/zktraffic.git
+$ cd zktraffic
+$ sudo ZKTRAFFIC_SOURCE=1 bin/zk-dump --iface=eth0
+```
+
+Or the stats gathering daemon:
+
+```
+$ sudo ZKTRAFFIC_SOURCE=1 bin/zk-stats-daemon --iface=eth0 --http-port=9090
+```
+
+### What is ZKTraffic? ###
 
 An {iptraf,top}-esque traffic monitor for ZooKeeper. Right now it exports
 per-path (and global) stats. Eventually it'll be made to export per-user
