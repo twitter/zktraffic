@@ -24,4 +24,5 @@ $ nosetests -v zktraffic/tests
 
 ## Style
 
-Make sure your code is PEP8 compliant and workes with Py2.7 and Py3K.
+Make sure your code is PEP8 compliant and workes with Py2.7 and Py3K. Although, currently
+Py3K is unsupported because of scapy, this should be fixed soon.

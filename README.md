@@ -152,6 +152,7 @@ Other relevant endpoints for stats are:
 
 
 ### Dependencies ###
+* Python 2.7 (Py3K soon)
 * ansicolors
 * dpkt-fix
 * twitter.common.app
