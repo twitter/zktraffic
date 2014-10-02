@@ -1,0 +1,4 @@
+dpkt-fix
+nose
+twitter.common.log
+scapy==2.2.0-dev
