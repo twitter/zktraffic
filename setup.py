@@ -63,18 +63,20 @@ setup(name='zktraffic',
       install_requires=[
           'ansicolors',
           'dpkt-fix',
+          'psutil>=2.1.0',
+          'scapy==2.2.0-dev',
           'twitter.common.app',
           'twitter.common.collections',
           'twitter.common.exceptions',
           'twitter.common.http',
           'twitter.common.log',
-          'scapy==2.2.0-dev',
       ],
       tests_require=[
           'dpkt-fix',
           'nose',
-          'twitter.common.log',
+          'psutil>=2.1.0',
           'scapy==2.2.0-dev',
+          'twitter.common.log',
       ],
       extras_require={
           'test': [
