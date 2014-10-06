@@ -27,6 +27,12 @@ app.add_option("--http-port",
                type=int,
                default=7070,
                help="listen port for http endpoints")
+app.add_option("--http-address",
+               dest="http_addr",
+               metavar="HTTPADDR",
+               type=str,
+               default=socket.gethostname(),
+               help="listen address for http endpoints")
 app.add_option("--zookeeper-port",
                type=int,
                default=2181,
@@ -87,7 +93,7 @@ def main(_, opts):
 
   server = Server()
   server.mount_routes(stats)
-  server.run(socket.gethostname(), opts.http_port)
+  server.run(opts.http_addr, opts.http_port)
 
   while True:
     time.sleep(10)
