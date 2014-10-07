@@ -3,3 +3,4 @@
 zktraffic.egg-info/
 build/
 dist/
+.coverage
