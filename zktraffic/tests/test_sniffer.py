@@ -17,19 +17,30 @@
 import os
 import signal
 import socket
+import sys
 from unittest import TestCase
 
 from zktraffic.base.sniffer import Sniffer, SnifferConfig
 
 import mock
+try:
+  from scapy.sendrecv import sniff
+except ImportError as e:
+  # scapy/arch/unix.py always sets use_dnet to 1
+  if sys.platform.startswith('darwin'):
+    def sniff(count=0, store=1, offline=None, prn = None, lfilter=None, L2socket=None, timeout=None,
+              opened_socket=None, stop_filter=None, *arg, **karg):
+      pass
+  else:
+    raise
 
 class TestSniffer(TestCase):
   def setUp(self):
     self.zkt = Sniffer(SnifferConfig())
 
   @mock.patch('os.kill', spec=os.kill)
-  @mock.patch('zktraffic.base.sniffer.Sniffer.sniff', spec=Sniffer.sniff)
-  def test_run_socket_error(self, mock_sniff):
+  @mock.patch('zktraffic.base.sniffer.sniff', spec=sniff)
+  def test_run_socket_error(self, mock_sniff, mock_kill):
     mock_sniff.side_effect = socket.error
 
     self.zkt.run()
@@ -37,6 +48,18 @@ class TestSniffer(TestCase):
     mock_sniff.assert_called_once_with(
         filter=self.zkt.config.filter,
         store=0,
-        self.zkt.handle_packet,
+        prn=self.zkt.handle_packet,
+        iface=self.zkt.config.iface)
+    mock_kill.assert_called_once_with(os.getpid(), signal.SIGINT)
+
+  @mock.patch('os.kill', spec=os.kill)
+  @mock.patch('zktraffic.base.sniffer.sniff', spec=sniff)
+  def test_run(self, mock_sniff, mock_kill):
+    self.zkt.run()
+
+    mock_sniff.assert_called_once_with(
+        filter=self.zkt.config.filter,
+        store=0,
+        prn=self.zkt.handle_packet,
         iface=self.zkt.config.iface)
     mock_kill.assert_called_once_with(os.getpid(), signal.SIGINT)

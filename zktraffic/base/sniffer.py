@@ -23,6 +23,7 @@ import os
 import signal
 import socket
 import struct
+import sys
 from threading import Thread
 
 from .client_message import ClientMessage, Request
@@ -30,12 +31,28 @@ from .network import BadPacket, get_ip, get_ip_packet
 from .server_message import Reply, ServerMessage, WatchEvent
 from .zookeeper import DeserializationError, OpCodes
 
-from scapy.sendrecv import sniff
 from scapy.config import conf as scapy_conf
+
+scapy_conf.logLevel = logging.ERROR  # shush scapy
+if sys.platform.startswith('darwin'):
+  scapy_conf.use_dnet = False
+
+
+try:
+  from scapy.sendrecv import sniff
+except ImportError as e:
+  # scapy/arch/unix.py always sets use_dnet to 1
+  if sys.platform.startswith('darwin'):
+    def sniff(count=0, store=1, offline=None, prn = None, lfilter=None, L2socket=None, timeout=None,
+              opened_socket=None, stop_filter=None, *arg, **karg):
+      raise NotImplementedError
+  else:
+    raise
+
+
 from twitter.common import log
 
 
-scapy_conf.logLevel = logging.ERROR  # shush scappy
 
 DEFAULT_PORT = 2181
 

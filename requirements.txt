@@ -1,6 +1,8 @@
+dnet>=1.11
 dpkt-fix
 mock>=1.0.1
 nose
 psutil>=2.1.0
+pcapy>=0.10.3
 scapy==2.2.0-dev
 twitter.common.log

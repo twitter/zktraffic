@@ -62,6 +62,7 @@ setup(name='zktraffic',
       scripts=['bin/zk-dump', 'bin/zk-stats-daemon'],
       install_requires=[
           'ansicolors',
+          'dnet>=1.11'
           'dpkt-fix',
           'psutil>=2.1.0',
           'scapy==2.2.0-dev',
