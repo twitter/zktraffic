@@ -1,4 +1,5 @@
 dpkt-fix
+mock>=1.0.1
 nose
 psutil>=2.1.0
 scapy==2.2.0-dev
