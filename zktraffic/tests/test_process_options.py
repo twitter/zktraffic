@@ -17,6 +17,7 @@
 
 import mock
 import os
+import sys
 
 from zktraffic.base.process import ProcessOptions
 
@@ -49,8 +50,9 @@ def test_cpu_affinity():
   def mock_cpu_affinity_handler(self, *args, **kwargs):
       return [0, 1]
 
-  # if running in TravisCI, mock the cpu_affinity() method call
-  if os.environ.get('TRAVIS'):
+  # if running in TravisCI, or on OS X without CPI affinty,
+  # mock the cpu_affinity() method call
+  if os.environ.get('TRAVIS') or sys.platform.startswith('darwin'):
       with mock.patch.object(psutil.Process, 'cpu_affinity', create=True, new=mock_cpu_affinity_handler):
           proc.set_cpu_affinity('0,1')
           assert proc.get_cpu_affinity() == [0, 1]

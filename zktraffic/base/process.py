@@ -46,7 +46,10 @@ class ProcessOptions(object):
         Get CPU affinity of this process
         :return: a list() of CPU cores this processes is pinned to
         """
-        return self.process.cpu_affinity()
+        try:
+          return self.process.cpu_affinity()
+        except AttributeError:
+          log.warn('cpu affinity is not available on your platform')
 
     def set_niceness(self, nice_level):
         """

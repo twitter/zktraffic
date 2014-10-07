@@ -33,7 +33,7 @@ from scapy.config import conf as scapy_conf
 from twitter.common import log
 
 
-scapy_conf.logLevel = logging.ERROR  # shush scappy
+scapy_conf.logLevel = logging.ERROR  # shush scapy
 
 DEFAULT_PORT = 2181
 
