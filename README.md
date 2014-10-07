@@ -159,9 +159,10 @@ Other relevant endpoints for stats are:
 * Python 2.7 (Py3K soon)
 * ansicolors
 * dpkt-fix
+* psutil>=2.1.0
+* scapy==2.2.0-dev
 * twitter.common.app
 * twitter.common.collections
 * twitter.common.exceptions
 * twitter.common.http
 * twitter.common.log
-* scapy==2.2.0-dev
