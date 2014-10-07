@@ -1,4 +1,3 @@
-dnet>=1.11
 dpkt-fix
 mock>=1.0.1
 nose
