@@ -11,6 +11,7 @@ if os.getenv("ZKTRAFFIC_SOURCE") is not None:
   sys.path.insert(0, ".")
 
 from zktraffic.endpoints.stats_server import StatsServer
+from zktraffic.base.process import ProcessOptions
 
 from twitter.common import app, log
 from twitter.common.http import HttpServer
@@ -57,6 +58,12 @@ app.add_option("--niceness",
                type=int,
                default=0,
                help="set the niceness")
+app.add_option("--set-cpu-affinity",
+               dest="cpu_affinity",
+               metavar="CPU#[,CPU#]",
+               type=str,
+               default=None,
+               help="A comma-separated list of CPU cores to pin this process to")
 app.add_option("--max-queued-requests",
                type=int,
                default=400000,
@@ -88,8 +95,13 @@ def main(_, opts):
 
   signal.signal(signal.SIGINT, signal.SIG_DFL)
 
+  process = ProcessOptions()
+
   if opts.niceness >= 0:
-    os.nice(opts.niceness)
+    process.set_niceness(opts.niceness)
+
+  if opts.cpu_affinity:
+    process.set_cpu_affinity(opts.cpu_affinity)
 
   server = Server()
   server.mount_routes(stats)
