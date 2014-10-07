@@ -21,6 +21,7 @@ from collections import defaultdict
 import logging
 import os
 import signal
+import socket
 import struct
 from threading import Thread
 
@@ -163,6 +164,8 @@ class Sniffer(Thread):
     try:
       log.info("Setting filter: %s", self.config.filter)
       sniff(filter=self.config.filter, store=0, prn=self.handle_packet, iface=self.config.iface)
+    except socket.error as ex:
+      log.error("Error: %s, device: %s", ex, self.config.iface)
     finally:
       log.info("The sniff loop exited")
       os.kill(os.getpid(), signal.SIGINT)
