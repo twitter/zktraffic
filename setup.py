@@ -73,6 +73,7 @@ setup(name='zktraffic',
       ],
       tests_require=[
           'dpkt-fix',
+          'mock',
           'nose',
           'psutil>=2.1.0',
           'scapy==2.2.0-dev',
@@ -81,6 +82,7 @@ setup(name='zktraffic',
       extras_require={
           'test': [
               'dpkt-fix',
+              'mock',
               'nose',
               'twitter.common.log',
               'scapy==2.2.0-dev',

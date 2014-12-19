@@ -19,7 +19,7 @@ ZKTraffic uses nose for tests. All tests go in zktraffic/tests.
 To run the tests:
 
 ```
-$ nosetests -v zktraffic/tests
+$ python setup.py nosetests
 ```
 
 ## Style
