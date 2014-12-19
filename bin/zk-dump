@@ -49,12 +49,12 @@ def format_timestamp(timestamp):
 class MessagePrinter(threading.Thread):
   NUM_COLORS = len(colors.COLORS)
 
-  def __init__(self, colors):
+  def __init__(self, colors, loopback):
     super(MessagePrinter, self).__init__()
     self.default_handler = self.colored_handler if colors else self.simple_handler
-    self.colors = colors
     self._requests_by_client = defaultdict(Requests)
     self._replies = deque()
+    self._loopback = loopback
 
     self.setDaemon(True)
 
@@ -66,12 +66,13 @@ class MessagePrinter(threading.Thread):
         time.sleep(0.1)
         continue
 
-      requests = self._requests_by_client[rep.client]
-      reqs = requests.pop(rep.xid)
+      reqs = self._requests_by_client[rep.client].pop(rep.xid)
       if not reqs:
         continue
 
-      self.default_handler(*(reqs + [rep]))
+      # HACK: if we are on the loopback, drop dupes
+      msgs = reqs[0:1] + [rep] if self._loopback else reqs + [rep]
+      self.default_handler(*msgs)
 
   def request_handler(self, req):
     self._requests_by_client[req.client].add(req)
@@ -104,7 +105,8 @@ def main(_, options):
   if options.include_pings:
     config.include_pings()
 
-  mp = MessagePrinter(options.colors)
+  loopback = options.iface in ["lo", "lo0"]
+  mp = MessagePrinter(options.colors, loopback=loopback)
   mp.start()
 
   sniffer = Sniffer(config, mp.request_handler, mp.reply_handler, mp.default_handler)
