@@ -29,7 +29,7 @@ class BadPacket(Error): pass
 _loopback = dpkt.loopback.Loopback()
 _ethernet = dpkt.ethernet.Ethernet()
 
-def get_ip_packet(data, client_port, server_port, is_loopback):
+def get_ip_packet(data, client_port, server_port, is_loopback=False):
   """ if client_port is 0 any client_port is good """
 
   header = _loopback if is_loopback else _ethernet
