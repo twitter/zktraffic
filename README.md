@@ -5,6 +5,7 @@
 - [tl;dr](#tldr)
 - [Installing](#installing)
 - [What is ZKTraffic?](#what-is-zktraffic)
+- [More tools!](#more-tools)
 - [Dependencies](#dependencies)
 
 ### tl;dr ###
@@ -154,6 +155,54 @@ Other relevant endpoints for stats are:
 * /json/auths: per-auth stats
 * /json/auths-dump: a full dump of known auths
 
+### More tools! ###
+
+Along with zk-dump and zk-stats-daemon, you can find fle-dump which allows you
+to inspect FastLeaderElection traffic (i.e.: the protocol by which ZooKeeper decides
+who will lead and the mechanism by which the leader is subsequently discovered):
+
+```
+$ sudo fle-dump --iface eth0 -c
+Writing log files to disk in /var/tmp
+ INFO] Setting filter: port 3888
+Notification(
+     timestamp=00:57:12:593254,
+     src=10.0.0.1:32938,
+     state=following,
+     leader=3,
+     zxid=0,
+     election_epoch=0,
+     peer_epoch=0,
+     config=
+          server.0=10.0.0.1:2889:3888:participant;0.0.0.0:2181
+          server.1=10.0.0.2:2889:3888:participant;0.0.0.0:2181
+          server.2=10.0.0.3:2889:3888:participant;0.0.0.0:2181
+          server.3=10.0.0.4:2889:3888:participant;0.0.0.0:2181
+          server.4=10.0.0.5:2889:3888:participant;0.0.0.0:2181
+          version=10010d4d6
+)
+Notification(
+     timestamp=00:57:12:595525,
+     src=10.0.0.2:3888,
+     state=looking,
+     leader=1,
+     zxid=4296326153,
+     election_epoch=1,
+     peer_epoch=1,
+     config=
+          server.0=10.0.0.1:2889:3888:participant;0.0.0.0:2181
+          server.1=10.0.0.2:2889:3888:participant;0.0.0.0:2181
+          server.2=10.0.0.3:2889:3888:participant;0.0.0.0:2181
+          server.3=10.0.0.4:2889:3888:participant;0.0.0.0:2181
+          server.4=10.0.0.5:2889:3888:participant;0.0.0.0:2181
+          version=10010d4d6
+)
+...
+
+```
+
+Note: for initial messages to be visible you'll need the patch available
+at [ZOOKEEPER-2098](https://issues.apache.org/jira/browse/ZOOKEEPER-2098 "ZOOKEEPER-2098").
 
 ### Dependencies ###
 * Python 2.7 (Py3K soon)
