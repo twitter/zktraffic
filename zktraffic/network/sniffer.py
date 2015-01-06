@@ -112,5 +112,6 @@ class Sniffer(Thread):
     return self._msg_cls.from_payload(
       ip_p.data.data,
       intern("%s:%s" % (get_ip(ip_p, ip_p.src), ip_p.data.sport)),
+      intern("%s:%s" % (get_ip(ip_p, ip_p.dst), ip_p.data.dport)),
       packet.time
     )

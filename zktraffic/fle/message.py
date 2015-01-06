@@ -50,7 +50,7 @@ class Message(object):
   __slots__ = ()
 
   @classmethod
-  def from_payload(cls, data, src, timestamp):
+  def from_payload(cls, data, src, dst, timestamp):
     if len(data) < 16:
       raise BadPacket("Too small")
 
@@ -59,7 +59,7 @@ class Message(object):
       server_id, offset = read_long(data, offset)
       election_addr, _ = read_string(data, offset)
 
-      return Initial(timestamp, src, server_id, election_addr)
+      return Initial(timestamp, src, dst, server_id, election_addr)
 
     if len(data) >= cls.OLD_LEN:
       state, offset = read_number(data, 0)
@@ -72,7 +72,17 @@ class Message(object):
       peer_epoch, offset = read_long(data, offset) if len(data) > cls.OLD_LEN else (-1, offset)
       config = data[cls.WITH_CONFIG_LEN:] if len(data) > cls.WITH_CONFIG_LEN else ""
 
-      return Notification(timestamp, src, state, leader, zxid, election_epoch, peer_epoch, config)
+      return Notification(
+        timestamp,
+        src,
+        dst,
+        state,
+        leader,
+        zxid,
+        election_epoch,
+        peer_epoch,
+        config
+      )
 
     raise BadPacket("Unknown unknown")
 
@@ -82,19 +92,21 @@ class Message(object):
 
 
 class Initial(Message):
-  __slots__ = ("timestamp", "src", "server_id", "election_addr")
+  __slots__ = ("timestamp", "src", "dst", "server_id", "election_addr")
 
-  def __init__(self, timestamp, src, server_id, election_addr):
+  def __init__(self, timestamp, src, dst, server_id, election_addr):
     self.timestamp = timestamp
     self.src = src
+    self.dst = dst
     self.server_id = server_id
     self.election_addr = election_addr
 
   def __str__(self):
-    return "%s(\n%s=%s,\n%s=%s,\n%s=%s,\n%s=%s\n)\n" % (
+    return "%s(\n%s=%s,\n%s=%s,\n%s=%s,\n%s=%s,\n%s=%s\n)\n" % (
       "Initial",
       " " * 5 + "timestamp", self.timestr,
       " " * 5 + "src", self.src,
+      " " * 5 + "dst", self.dst,
       " " * 5 + "server_id", self.server_id,
       " " * 5 + "election_addr", self.election_addr
     )
@@ -104,6 +116,7 @@ class Notification(Message):
   __slots__ = (
     "timestamp",
     "src",
+    "dst",
     "state",
     "leader",
     "zxid",
@@ -112,9 +125,10 @@ class Notification(Message):
     "config"
   )
 
-  def __init__(self, timestamp, src, state, leader, zxid, election_epoch, peer_epoch, config):
+  def __init__(self, timestamp, src, dst, state, leader, zxid, election_epoch, peer_epoch, config):
     self.timestamp = timestamp
     self.src = src
+    self.dst = dst
     self.state = state
     self.leader = leader
     self.zxid = zxid
@@ -128,10 +142,11 @@ class Notification(Message):
 
   def __str__(self):
     config = [" " * 10 + cline for cline in self.config.split("\n")]
-    return "%s(\n%s=%s,\n%s=%s,\n%s=%s,\n%s=%s,\n%s=%s,\n%s=%s,\n%s=%s,\n%s=\n%s\n)\n" % (
+    return "%s(\n%s=%s,\n%s=%s,\n%s=%s,\n%s=%s,\n%s=%s,\n%s=%s,\n%s=%s,\n%s=%s,\n%s=\n%s\n)\n" % (
       "Notification",
       " " * 5 + "timestamp", self.timestr,
       " " * 5 + "src", self.src,
+      " " * 5 + "dst", self.dst,
       " " * 5 + "state", self.state_literal,
       " " * 5 + "leader", self.leader,
       " " * 5 + "zxid", self.zxid,
