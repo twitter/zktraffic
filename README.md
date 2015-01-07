@@ -173,6 +173,7 @@ Writing log files to disk in /var/tmp
 Notification(
      timestamp=00:57:12:593254,
      src=10.0.0.1:32938,
+     dst=10.0.0.2:3888,
      state=following,
      leader=3,
      zxid=0,
@@ -189,6 +190,7 @@ Notification(
 Notification(
      timestamp=00:57:12:595525,
      src=10.0.0.2:3888,
+     dst=10.0.0.1:32938,
      state=looking,
      leader=1,
      zxid=4296326153,
@@ -208,6 +210,56 @@ Notification(
 
 Note: for initial messages to be visible you'll need the patch available
 at [ZOOKEEPER-2098](https://issues.apache.org/jira/browse/ZOOKEEPER-2098 "ZOOKEEPER-2098").
+
+If you are interested in debugging ZAB (ZooKeeper Atomic Broadcast protocol), you can use
+zab-dump:
+
+```
+$ sudo zab-dump --iface eth0
+
+QuorumPacket(
+     timestamp=00:15:17:108798,
+     src=10.0.0.1:2889,
+     dst=10.0.0.2:32938,
+     type=proposal,
+     zxid=-1,
+     length=105
+)
+QuorumPacket(
+     timestamp=00:15:17:109240,
+     src=10.0.0.2:32938,
+     dst=10.0.0.1:2889,
+     type=ack,
+     zxid=4296356349,
+     length=98
+)
+QuorumPacket(
+     timestamp=00:15:17:109245,
+     src=10.0.0.3:33090,
+     dst=10.0.0.1:2889,
+     type=ack,
+     zxid=4296356349,
+     length=98
+)
+QuorumPacket(
+     timestamp=00:15:17:109259,
+     src=10.0.0.4:32900,
+     dst=10.0.0.1:2889,
+     type=ack,
+     zxid=4296356349,
+     length=98
+)
+QuorumPacket(
+     timestamp=00:15:17:110037,
+     src=10.0.0.1:2889,
+     dst=10.0.0.4:32900,
+     type=commit,
+     zxid=4296356349,
+     length=20
+)
+...
+
+```
 
 ### Dependencies ###
 * Python 2.7 (Py3K soon)

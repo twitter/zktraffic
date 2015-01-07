@@ -14,7 +14,6 @@
 # limitations under the License.
 # ==================================================================================================
 
-import time
 import unittest
 
 from zktraffic.base.network import BadPacket
@@ -26,12 +25,12 @@ class MessagesTestCase(unittest.TestCase):
     payload = '%s%s%s%s' % (
       '\xff\xff\xff\xff\xff\xff\x00\x00',  # proto version: -65536L
       '\x00\x00\x00\x00\x00\x00\x00\x06',  # server id
-      '\x00\x00\x00\x0c',                  # addr len
-      '127.0.0.1:80',                      # addr
+      '\x00\x00\x00\x0e',                  # addr len
+      '127.0.0.1:3888',                    # addr
     )
-    init = Message.from_payload(payload, '127.0.0.1:80', time.time())
+    init = Message.from_payload(payload, '127.0.0.1:3888', '127.0.0.1:9000', 0)
     self.assertEqual(6, init.server_id)
-    self.assertEqual('127.0.0.1:80', init.election_addr)
+    self.assertEqual('127.0.0.1:3888', init.election_addr)
 
   def test_notification_28(self):
     payload = '%s%s%s%s' % (
@@ -40,7 +39,7 @@ class MessagesTestCase(unittest.TestCase):
       '\x00\x00\x00\x00\x00\x00 \x00',     # zxid
       '\x00\x00\x00\x00\x00\x00\x00\n',    # election epoch
     )
-    notif = Message.from_payload(payload, '127.0.0.1:80', time.time())
+    notif = Message.from_payload(payload, '127.0.0.1:3888', '127.0.0.1:9000', 0)
     self.assertEqual(1, notif.state)
     self.assertEqual(3, notif.leader)
     self.assertEqual(0x2000, notif.zxid)
@@ -56,7 +55,7 @@ class MessagesTestCase(unittest.TestCase):
       '\x00\x00\x00\x00\x00\x00\x00\n',    # election epoch
       '\x00\x00\x00\x00\x00\x00\x00\n',    # peer epoch
     )
-    notif = Message.from_payload(payload, '127.0.0.1:80', time.time())
+    notif = Message.from_payload(payload, '127.0.0.1:3888', '127.0.0.1:9000', 0)
     self.assertEqual(1, notif.state)
     self.assertEqual(3, notif.leader)
     self.assertEqual(0x2000, notif.zxid)
@@ -79,7 +78,7 @@ class MessagesTestCase(unittest.TestCase):
       '\x00\x00\x00\x00\x00\x00\x00\n',    # peer epoch
       config,
     )
-    notif = Message.from_payload(payload, '127.0.0.1:80', time.time())
+    notif = Message.from_payload(payload, '127.0.0.1:3888', '127.0.0.1:9000', 0)
     self.assertEqual(1, notif.state)
     self.assertEqual(3, notif.leader)
     self.assertEqual(0x2000, notif.zxid)
@@ -94,4 +93,4 @@ class MessagesTestCase(unittest.TestCase):
       '\x00\x00\x00\x00\x00\x00 \x00',     # zxid
       '\x00\x00\x00\x00\x00\x00\x00\n',    # election epoch
     )
-    self.assertRaises(BadPacket, Message.from_payload, payload, '127.0.0.1:80', time.time())
+    self.assertRaises(BadPacket, Message.from_payload, payload, '127.0.0.1:388', '127.0.0.1:900', 0)
