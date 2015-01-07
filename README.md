@@ -5,6 +5,7 @@
 - [tl;dr](#tldr)
 - [Installing](#installing)
 - [What is ZKTraffic?](#what-is-zktraffic)
+- [Contributing and Testing](#contributing-and-testing)
 - [More tools!](#more-tools)
 - [Dependencies](#dependencies)
 
@@ -154,6 +155,10 @@ Other relevant endpoints for stats are:
 * /json/ips: top-N per-ip stats
 * /json/auths: per-auth stats
 * /json/auths-dump: a full dump of known auths
+
+### Contributing and Testing ###
+
+Please see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ### More tools! ###
 
