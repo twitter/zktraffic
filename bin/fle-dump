@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
+#
 # ==================================================================================================
 # Copyright 2015 Twitter, Inc.
 # --------------------------------------------------------------------------------------------------
@@ -24,27 +24,10 @@ if os.getenv("ZKTRAFFIC_SOURCE") is not None:
   sys.path.insert(0,  "..")
   sys.path.insert(0, ".")
 
-from zktraffic.cli.printer import Printer
-from zktraffic.fle.message import Message
-from zktraffic.network.sniffer import Sniffer
+from zktraffic.cli.fle import main, setup
 
 from twitter.common import app
 
 
-app.add_option('--iface', default='eth0', type=str)
-app.add_option('--port', default=3888, type=int)
-app.add_option('-c', '--colors', default=False, action='store_true')
-
-
-def main(_, options):
-  printer = Printer(options.colors)
-  sniffer = Sniffer(options.iface, options.port, Message, printer.add)
-
-  try:
-    while True:
-      sniffer.join(1)
-  except (KeyboardInterrupt, SystemExit):
-    pass
-
-
+setup()
 app.main()

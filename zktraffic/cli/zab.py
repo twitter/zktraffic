@@ -1,6 +1,3 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-#
 # ==================================================================================================
 # Copyright 2015 Twitter, Inc.
 # --------------------------------------------------------------------------------------------------
@@ -17,17 +14,31 @@
 # limitations under the License.
 # ==================================================================================================
 
-import os
-import sys
+from .printer import Printer
 
-if os.getenv("ZKTRAFFIC_SOURCE") is not None:
-  sys.path.insert(0,  "..")
-  sys.path.insert(0, ".")
-
-from zktraffic.cli.zab import main, setup
+from zktraffic.network.sniffer import Sniffer
+from zktraffic.zab.quorum_packet import QuorumPacket
 
 from twitter.common import app
 
 
-setup()
-app.main()
+def setup():
+  app.add_option('--iface', default='eth0', type=str)
+  app.add_option('--port', default=2889, type=int)
+  app.add_option('-c', '--colors', default=False, action='store_true')
+
+
+def main(_, options):
+  printer = Printer(options.colors)
+  sniffer = Sniffer(options.iface, options.port, QuorumPacket, printer.add)
+
+  try:
+    while True:
+      sniffer.join(1)
+  except (KeyboardInterrupt, SystemExit):
+    pass
+
+
+if __name__ == '__main__':
+  setup()
+  app.main()
