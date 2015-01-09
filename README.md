@@ -35,6 +35,27 @@ Or the stats gathering daemon:
 $ sudo ZKTRAFFIC_SOURCE=1 bin/zk-stats-daemon --iface=eth0 --http-port=9090
 ```
 
+Or you can build PEX files — from the source — for any of the available tools:
+
+```
+$ pip install pex
+
+# zk-dump
+$ pex -s . -v -e zktraffic.cli.zk -o zk-dump.pex
+
+# zk-stats-daemon
+$ pex -s . -v -e zktraffic.cli.stats_daemon -o stats-daemon.pex
+
+# zab-dump
+$ pex -s . -v -e zktraffic.cli.zab -o zab-dump.pex
+
+# fle-dump
+$ pex -s . -v -e zktraffic.cli.fle -o fle-dump.pex
+
+```
+
+More info about PEX [here](https://pex.readthedocs.org "PEX").
+
 ### What is ZKTraffic? ###
 
 An {iptraf,top}-esque traffic monitor for ZooKeeper. Right now it exports
