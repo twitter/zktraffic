@@ -1,0 +1,7 @@
+-e git+https://github.com/CoreSecurity/pcapy.git@2984bf5e974ab3a2af58c0501f2d4072db5ac4e4#egg=pcapy-10.8
+dpkt-fix
+mock
+nose
+psutil>=2.1.0
+scapy==2.2.0-dev
+twitter.common.log

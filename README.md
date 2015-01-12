@@ -7,6 +7,7 @@
 - [What is ZKTraffic?](#what-is-zktraffic)
 - [Contributing and Testing](#contributing-and-testing)
 - [More tools!](#more-tools)
+- [OS X](#os-x)
 - [Dependencies](#dependencies)
 
 ### tl;dr ###
@@ -280,6 +281,13 @@ QuorumPacket(
 )
 ...
 
+```
+
+### OS X ###
+Although no one has tried running this on OS X in production, it can be used for some parts of development and unit testing. If you are running on OS X, please run the following to install the correct dependencies:
+
+```sh
+$ pip install -r ./osx_requirements.txt
 ```
 
 ### Dependencies ###
