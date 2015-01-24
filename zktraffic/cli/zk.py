@@ -18,6 +18,7 @@
 
 from collections import defaultdict, deque
 from datetime import datetime
+import socket
 import sys
 import threading
 import time
@@ -35,6 +36,18 @@ def setup():
   app.add_option('--zookeeper-port', default=2181, type=int)
   app.add_option('--max-queued-requests', default=10000, type=int)
   app.add_option('--unpaired', default=False, action='store_true', help='Don\'t pair reqs/reps')
+  app.add_option('--exclude-host',
+                 dest='excluded_hosts',
+                 metavar='HOST',
+                 default=[],
+                 action='append',
+                 help='Host that should be excluded (you can use this multiple times)')
+  app.add_option('--include-host',
+                 dest='included_hosts',
+                 metavar='HOST',
+                 default=[],
+                 action='append',
+                 help='Host that should be included (you can use this multiple times)')
   app.add_option('-p', '--include-pings', default=False, action='store_true')
   app.add_option('-c', '--colors', default=False, action='store_true')
 
@@ -151,12 +164,48 @@ class UnpairedPrinter(BasePrinter):
     self._messages.append(evt)
 
 
+def expand_hosts(hosts):
+  """ given a list of hosts, expand to its IPs """
+  ips = set()
+
+  for host in hosts:
+    ips.update(get_ips(host))
+
+  return list(ips)
+
+
+def get_ips(host, port=0):
+  """ lookup all IPs (v4 and v6) """
+  ips = set()
+
+  for af_type in (socket.AF_INET, socket.AF_INET6):
+    try:
+      records = socket.getaddrinfo(host, port, af_type, socket.SOCK_STREAM)
+      ips.update(rec[4][0] for rec in records)
+    except socket.gaierror as ex:
+      if af_type == socket.AF_INET:
+        sys.stderr.write("Skipping host: no IPv4s for %s\n" % host)
+      else:
+        sys.stderr.write("Skipping host: no IPv6s for %s\n" % host)
+
+  return ips
+
+
 def main(_, options):
   config = SnifferConfig(options.iface)
   config.track_replies = True
   config.zookeeper_port = options.zookeeper_port
   config.max_queued_requests = options.max_queued_requests
   config.client_port = options.client_port if options.client_port != 0 else config.client_port
+
+  if options.excluded_hosts and options.included_hosts:
+    sys.stderr.write("The flags --include-host and --exclude-host can't be mixed")
+    sys.exit(1)
+
+  if options.excluded_hosts:
+    config.excluded_ips += expand_hosts(options.excluded_hosts)
+  elif options.included_hosts:
+    config.included_ips += expand_hosts(options.included_hosts)
 
   config.update_filter()
 
