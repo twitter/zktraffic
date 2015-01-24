@@ -34,6 +34,7 @@ def setup():
   app.add_option('--client-port', default=0, type=int)
   app.add_option('--zookeeper-port', default=2181, type=int)
   app.add_option('--max-queued-requests', default=10000, type=int)
+  app.add_option('--unpaired', default=False, action='store_true', help='Don\'t pair reqs/reps')
   app.add_option('-p', '--include-pings', default=False, action='store_true')
   app.add_option('-c', '--colors', default=False, action='store_true')
 
@@ -57,24 +58,53 @@ def format_timestamp(timestamp):
   return dt.strftime("%H:%M:%S:%f")
 
 
-class MessagePrinter(threading.Thread):
+class BasePrinter(threading.Thread):
   NUM_COLORS = len(colors.COLORS)
 
   def __init__(self, colors, loopback):
-    super(MessagePrinter, self).__init__()
-    self.default_handler = self.colored_handler if colors else self.simple_handler
-    self._requests_by_client = defaultdict(Requests)
-    self._replies = deque()
-    self._loopback = loopback
+    super(BasePrinter, self).__init__()
+    self.write = self.colored_write if colors else self.simple_write
+    self.loopback = loopback
 
     self.setDaemon(True)
+
+  def run(self):
+    pass
+
+  def request_handler(self, req):
+    pass
+
+  def reply_handler(self, rep):
+    pass
+
+  def event_handler(self, rep):
+    pass
+
+  def colored_write(self, *msgs):
+    c = colors.COLORS[zlib.adler32(msgs[0].client) % self.NUM_COLORS]
+    cfunc = getattr(colors, c)
+    for i, m in enumerate(msgs):
+      sys.stdout.write(cfunc("%s%s %s" % (right_arrow(i), format_timestamp(m.timestamp), m)))
+    sys.stdout.flush()
+
+  def simple_write(self, *msgs):
+    for i, m in enumerate(msgs):
+      sys.stdout.write("%s%s %s" % (right_arrow(i), format_timestamp(m.timestamp), m))
+    sys.stdout.flush()
+
+
+class DefaultPrinter(BasePrinter):
+  def __init__(self, colors, loopback):
+    super(DefaultPrinter, self).__init__(colors, loopback)
+    self._requests_by_client = defaultdict(Requests)
+    self._replies = deque()
 
   def run(self):
     while True:
       try:
         rep = self._replies.popleft()
       except IndexError:
-        time.sleep(0.1)
+        time.sleep(0.01)
         continue
 
       reqs = self._requests_by_client[rep.client].pop(rep.xid)
@@ -82,8 +112,8 @@ class MessagePrinter(threading.Thread):
         continue
 
       # HACK: if we are on the loopback, drop dupes
-      msgs = reqs[0:1] + [rep] if self._loopback else reqs + [rep]
-      self.default_handler(*msgs)
+      msgs = reqs[0:1] + [rep] if self.loopback else reqs + [rep]
+      self.write(*msgs)
 
   def request_handler(self, req):
     self._requests_by_client[req.client].add(req)
@@ -91,17 +121,34 @@ class MessagePrinter(threading.Thread):
   def reply_handler(self, rep):
     self._replies.append(rep)
 
-  def colored_handler(self, *msgs):
-    c = colors.COLORS[zlib.adler32(msgs[0].client) % self.NUM_COLORS]
-    cfunc = getattr(colors, c)
-    for i, m in enumerate(msgs):
-      sys.stdout.write(cfunc("%s%s %s" % (right_arrow(i), format_timestamp(m.timestamp), m)))
-    sys.stdout.flush()
+  def event_handler(self, evt):
+    """ TODO: a queue for this would be good to avoid blocking pcap """
+    self.write(evt)
 
-  def simple_handler(self, *msgs):
-    for i, m in enumerate(msgs):
-      sys.stdout.write("%s%s %s" % (right_arrow(i), format_timestamp(m.timestamp), m))
-    sys.stdout.flush()
+
+class UnpairedPrinter(BasePrinter):
+  def __init__(self, colors, loopback):
+    super(UnpairedPrinter, self).__init__(colors, loopback)
+    self._messages = deque()
+
+  def run(self):
+    while True:
+      try:
+        msg = self._messages.popleft()
+      except IndexError:
+        time.sleep(0.01)
+        continue
+
+      self.write(msg)
+
+  def request_handler(self, req):
+    self._messages.append(req)
+
+  def reply_handler(self, rep):
+    self._messages.append(rep)
+
+  def event_handler(self, evt):
+    self._messages.append(evt)
 
 
 def main(_, options):
@@ -117,10 +164,14 @@ def main(_, options):
     config.include_pings()
 
   loopback = options.iface in ["lo", "lo0"]
-  mp = MessagePrinter(options.colors, loopback=loopback)
-  mp.start()
 
-  sniffer = Sniffer(config, mp.request_handler, mp.reply_handler, mp.default_handler)
+  if options.unpaired:
+    p = UnpairedPrinter(options.colors, loopback)
+  else:
+    p = DefaultPrinter(options.colors, loopback)
+  p.start()
+
+  sniffer = Sniffer(config, p.request_handler, p.reply_handler, p.event_handler)
   sniffer.start()
 
   try:
