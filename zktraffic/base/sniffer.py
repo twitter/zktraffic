@@ -54,15 +54,24 @@ class SnifferConfig(object):
     self.track_replies = False
     self.max_queued_requests = 10000
     self.zookeeper_port = DEFAULT_PORT
-    self.update_filter()
+    self.included_ips = []
+    self.excluded_ips = []
     self.excluded_opcodes = set()
     self.is_loopback = False
     self.read_timeout_ms = 0
 
+    self.update_filter()
     self.exclude_pings()
 
   def update_filter(self):
     self.filter = "port %d" % (self.zookeeper_port)
+
+    assert not (self.included_ips and self.excluded_ips)
+
+    if self.excluded_ips:
+      self.filter +=  " and host not " + " and host not ".join(self.excluded_ips)
+    elif self.included_ips:
+      self.filter += " and (host " + " or host ".join(self.included_ips) + ")"
 
   def include_pings(self):
     self.update_exclusion_list(OpCodes.PING, False)
