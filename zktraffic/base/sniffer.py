@@ -54,11 +54,13 @@ class SnifferConfig(object):
     self.track_replies = False
     self.max_queued_requests = 10000
     self.zookeeper_port = DEFAULT_PORT
-    self.included_ips = []
-    self.excluded_ips = []
     self.excluded_opcodes = set()
     self.is_loopback = False
     self.read_timeout_ms = 0
+
+    # These are set after initialization, and require `update_filter` to be called
+    self.included_ips = []
+    self.excluded_ips = []
 
     self.update_filter()
     self.exclude_pings()
