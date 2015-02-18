@@ -79,7 +79,10 @@ class Sniffer(Thread):
     pfilter = "port %d" % self._port
     try:
       log.info("Setting filter: %s", pfilter)
-      sniff(filter=pfilter, store=0, prn=self.handle_packet, iface=self._iface)
+      if self._iface == "any":
+        sniff(filter=pfilter, store=0, prn=self.handle_packet)
+      else:
+        sniff(filter=pfilter, store=0, prn=self.handle_packet, iface=self._iface)
     except socket.error as ex:
       log.error("Error: %s, device: %s", ex, self._iface)
     finally:
