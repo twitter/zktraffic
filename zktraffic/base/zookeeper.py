@@ -40,6 +40,7 @@ class OpCodes(object):
   CHECK = 13
   MULTI = 14
   CREATE2 = 15
+  RECONFIG = 16
   CLOSE = -11
   SETAUTH = 100
   SETWATCHES = 101
@@ -61,6 +62,7 @@ ZK_REQUEST_TYPES = {
   OpCodes.CHECK: 'CheckRequest',
   OpCodes.MULTI: 'MultiRequest',
   OpCodes.CREATE2: 'CreateRequest',
+  OpCodes.RECONFIG: 'ReconfigRequest',
   OpCodes.CLOSE: 'CloseRequest',
   OpCodes.SETAUTH: 'SetAuthRequest',
   OpCodes.SETWATCHES: 'SetWatchesRequest',
@@ -76,7 +78,8 @@ ZK_WRITE_OPS = (
   OpCodes.DELETE,
   OpCodes.SETDATA,
   OpCodes.MULTI,
-  OpCodes.SETACL)
+  OpCodes.SETACL,
+  OpCodes.RECONFIG)
 
 
 ZK_CAN_SET_WATCH = (
@@ -110,7 +113,8 @@ def has_path(opcode):
     OpCodes.PING,
     OpCodes.SETAUTH,
     OpCodes.MULTI,
-    OpCodes.CLOSE)
+    OpCodes.CLOSE,
+    OpCodes.RECONFIG)
 
 
 def read_path(data, offset):
