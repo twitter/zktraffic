@@ -54,3 +54,36 @@ class TestSniffer(TestCase):
         prn=self.zkt.handle_packet,
         iface=self.zkt.config.iface)
     mock_kill.assert_called_once_with(os.getpid(), signal.SIGINT)
+
+  def test_exclude(self):
+    filter_text = 'port 2181'
+    excluded_ip = '8.8.8.8'
+    assert self.zkt.config.filter == filter_text
+
+    self.zkt.config.excluded_ips = [excluded_ip]
+    assert self.zkt.config.filter == filter_text
+    self.zkt.config.update_filter()
+    assert self.zkt.config.filter == '%s and host not %s' % (filter_text, excluded_ip)
+
+    excluded_ip_two = '8.8.4.4'
+    excluded_ip_three = '172.24.6.11'
+    self.zkt.config.excluded_ips = [excluded_ip, excluded_ip_two, excluded_ip_three]
+    self.zkt.config.update_filter()
+    assert self.zkt.config.filter == '%s and host not %s and host not %s and host not %s' % (
+        filter_text, excluded_ip, excluded_ip_two, excluded_ip_three)
+
+  def test_include(self):
+    filter_text = 'port 2181'
+    included_ip = '8.8.8.8'
+    assert self.zkt.config.filter == filter_text
+    self.zkt.config.included_ips = [included_ip]
+    assert self.zkt.config.filter == filter_text
+    self.zkt.config.update_filter()
+    assert self.zkt.config.filter == '%s and (host %s)' % (filter_text, included_ip)
+
+    included_ip_two = '8.8.4.4'
+    included_ip_three = '172.24.6.11'
+    self.zkt.config.included_ips = [included_ip, included_ip_two, included_ip_three]
+    self.zkt.config.update_filter()
+    assert self.zkt.config.filter == '%s and (host %s or host %s or host %s)' % (
+        filter_text, included_ip, included_ip_two, included_ip_three)
