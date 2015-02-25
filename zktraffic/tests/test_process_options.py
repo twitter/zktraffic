@@ -32,7 +32,7 @@ def test_niceness():
   Test CPU niceness calls
   """
   proc.set_niceness(15)
-  assert proc.get_niceness() == 15
+  assert proc.niceness == 15
 
 
 def test_cpu_affinity_parsing():
@@ -55,9 +55,9 @@ def test_cpu_affinity():
   if os.environ.get('TRAVIS') or sys.platform.startswith('darwin'):
       with mock.patch.object(psutil.Process, 'cpu_affinity', create=True, new=mock_cpu_affinity_handler):
           proc.set_cpu_affinity('0,1')
-          assert proc.get_cpu_affinity() == [0, 1]
+          assert proc.cpu_affinity == [0, 1]
   else:
     proc.set_cpu_affinity('0,1')
-    assert proc.get_cpu_affinity() == [0, 1]
+    assert proc.cpu_affinity == [0, 1]
     proc.set_cpu_affinity('1')
-    assert proc.get_cpu_affinity() == [1]
+    assert proc.cpu_affinity == [1]

@@ -25,6 +25,8 @@ if os.getenv("ZKTRAFFIC_SOURCE") is not None:
 
 from zktraffic.cli.stats_daemon import main, setup
 
+from twitter.common import app
+
 
 setup()
 app.main()

@@ -17,10 +17,11 @@
 
 """ Process helpers used to improve zktraffic operation """
 
+import time
+
 from twitter.common import log
 
 import psutil
-from psutil import AccessDenied, NoSuchProcess
 
 
 class ProcessOptions(object):
@@ -41,7 +42,8 @@ class ProcessOptions(object):
         except AttributeError:
             log.warn('cpu affinity is not available on your platform')
 
-    def get_cpu_affinity(self):
+    @property
+    def cpu_affinity(self):
         """
         Get CPU affinity of this process
         :return: a list() of CPU cores this processes is pinned to
@@ -61,15 +63,23 @@ class ProcessOptions(object):
             if not 0 <= nice_level <= 20:
                 raise ValueError('nice level must be between 0 and 20')
             self.process.nice(nice_level)
-        except(EnvironmentError, ValueError, AccessDenied, NoSuchProcess) as e:
+        except(EnvironmentError, ValueError, psutil.AccessDenied, psutil.NoSuchProcess) as e:
             log.warn('unable to set nice level on process: {}'.format(e))
 
-    def get_niceness(self):
+    @property
+    def niceness(self):
         """
         Get nice level of this process
         :return: an int() representing the nice level of this process
         """
         return self.process.nice()
+
+    @property
+    def uptime(self):
+      """
+      Current process' uptime in seconds
+      """
+      return int(time.time()) - int(self.process.create_time())
 
     @staticmethod
     def parse_cpu_affinity(cpu_affinity_csv):
