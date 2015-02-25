@@ -177,6 +177,8 @@ Other relevant endpoints for stats are:
 * /json/ips: top-N per-ip stats
 * /json/auths: per-auth stats
 * /json/auths-dump: a full dump of known auths
+* /json/info: process uptime and introspection info
+* /threads: stacks for all threads
 
 ### Contributing and Testing ###
 
