@@ -17,10 +17,11 @@
 
 """ Process helpers used to improve zktraffic operation """
 
+import time
+
 from twitter.common import log
 
 import psutil
-from psutil import AccessDenied, NoSuchProcess
 
 
 class ProcessOptions(object):
@@ -62,7 +63,7 @@ class ProcessOptions(object):
             if not 0 <= nice_level <= 20:
                 raise ValueError('nice level must be between 0 and 20')
             self.process.nice(nice_level)
-        except(EnvironmentError, ValueError, AccessDenied, NoSuchProcess) as e:
+        except(EnvironmentError, ValueError, psutil.AccessDenied, psutil.NoSuchProcess) as e:
             log.warn('unable to set nice level on process: {}'.format(e))
 
     @property
@@ -72,6 +73,13 @@ class ProcessOptions(object):
         :return: an int() representing the nice level of this process
         """
         return self.process.nice()
+
+    @property
+    def uptime(self):
+      """
+      Current process' uptime in seconds
+      """
+      return int(time.time()) - int(self.process.create_time())
 
     @staticmethod
     def parse_cpu_affinity(cpu_affinity_csv):
