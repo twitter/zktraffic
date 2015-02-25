@@ -41,7 +41,8 @@ class ProcessOptions(object):
         except AttributeError:
             log.warn('cpu affinity is not available on your platform')
 
-    def get_cpu_affinity(self):
+    @property
+    def cpu_affinity(self):
         """
         Get CPU affinity of this process
         :return: a list() of CPU cores this processes is pinned to
@@ -64,7 +65,8 @@ class ProcessOptions(object):
         except(EnvironmentError, ValueError, AccessDenied, NoSuchProcess) as e:
             log.warn('unable to set nice level on process: {}'.format(e))
 
-    def get_niceness(self):
+    @property
+    def niceness(self):
         """
         Get nice level of this process
         :return: an int() representing the nice level of this process
