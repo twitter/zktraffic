@@ -17,6 +17,7 @@
 
 import multiprocessing
 
+from zktraffic.base.process import ProcessOptions
 from zktraffic.stats.loaders import QueueStatsLoader
 from zktraffic.stats.accumulators import (
   PerAuthStatsAccumulator,
@@ -81,3 +82,11 @@ class StatsServer(EndpointsServer):
   @HttpServer.route("/json/auths-dump")
   def json_auths_dump(self):
     return self._stats.auth_by_client
+
+  @HttpServer.route("/json/info")
+  def json_info(self):
+    """ general info about this instance """
+    proc = ProcessOptions()
+    return {
+      "uptime": proc.uptime
+    }
