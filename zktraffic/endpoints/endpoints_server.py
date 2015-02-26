@@ -24,12 +24,18 @@ class EndpointsServer(HttpServer):
   MAX_RESULTS = 10
 
   def __init__(
-      self, iface, zkport, request_handler, reply_handler=None, event_handler=None):
-    HttpServer.__init__(self)
-
+      self, iface, zkport, request_handler, reply_handler=None, event_handler=None, start_sniffer=True):
     config = SnifferConfig(iface=iface)
     config.zookeeper_port = zkport
     config.update_filter()
 
     self._sniffer = Sniffer(config, request_handler, reply_handler, event_handler)
-    self._sniffer.start()
+
+    if start_sniffer:
+      self._sniffer.start()
+
+    super(EndpointsServer, self).__init__()
+
+  @property
+  def sniffer(self):
+    return self._sniffer
