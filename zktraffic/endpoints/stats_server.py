@@ -38,7 +38,8 @@ class StatsServer(EndpointsServer):
                max_results=EndpointsServer.MAX_RESULTS,
                max_reqs=400000,
                max_reps=400000,
-               max_events=400000):
+               max_events=400000,
+               start_sniffer=True):
 
     # Forcing a load of the multiprocessing module here
     # seem to be hitting http://bugs.python.org/issue8200
@@ -55,7 +56,12 @@ class StatsServer(EndpointsServer):
     self._stats.start()
 
     super(StatsServer, self).__init__(
-      iface, zkport, self._stats.handle_request, self._stats.handle_reply, self._stats.handle_event)
+      iface,
+      zkport,
+      self._stats.handle_request,
+      self._stats.handle_reply,
+      self._stats.handle_event,
+      start_sniffer)
 
   def _get_stats(self, name, prefix=''):
     stats_by_opname = self._stats.stats(name, self._max_results)
