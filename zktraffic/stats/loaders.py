@@ -45,6 +45,7 @@ class QueueStatsLoader(ExceptionalThread):
     self._event_handlers = set()
     self._auth_by_client = defaultdict(lambda: intern("noauth"))
     super(QueueStatsLoader, self).__init__()
+    self.setDaemon(True)
 
   @property
   def auth_by_client(self):
