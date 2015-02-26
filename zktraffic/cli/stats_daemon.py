@@ -23,6 +23,7 @@ from zktraffic.base.process import ProcessOptions
 
 from twitter.common import app, log
 from twitter.common.http import HttpServer
+from twitter.common.http.diagnostics import DiagnosticsEndpoints
 
 
 def setup():
@@ -113,6 +114,7 @@ def main(_, opts):
     process.set_cpu_affinity(opts.cpu_affinity)
 
   server = Server()
+  server.mount_routes(DiagnosticsEndpoints())
   server.mount_routes(stats)
   server.run(opts.http_addr, opts.http_port)
 
