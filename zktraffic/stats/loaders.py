@@ -88,10 +88,8 @@ class QueueStatsLoader(ExceptionalThread):
 
       # wait for new requests/replies/events
       with self._cv:
-        while not self._stopped:
-          if any((self._requests, self._replies, self._events)):
-            break
-          self._cv.wait()
+        if not any((self._requests, self._replies, self._events)):
+          self._cv.wait(1.0)
 
   def _process_queue(self, queue, handlers):
     while True:
