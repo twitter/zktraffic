@@ -49,6 +49,10 @@ class QueueStatsLoader(ExceptionalThread):
     super(QueueStatsLoader, self).__init__()
     self.setDaemon(True)
 
+  def wakeup(self):
+    with self._cv:
+      self._cv.notify()
+
   @property
   def auth_by_client(self):
     return self._auth_by_client

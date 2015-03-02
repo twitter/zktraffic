@@ -64,6 +64,13 @@ class StatsServer(EndpointsServer):
       self._stats.handle_event,
       start_sniffer)
 
+  def wakeup(self):
+    self._stats.wakeup()
+
+  @property
+  def has_stats(self):
+    return len(self._get_stats('per_path')) > 0
+
   def _get_stats(self, name, prefix=''):
     stats_by_opname = self._stats.stats(name, self._max_results)
 
