@@ -22,10 +22,11 @@ stats handler.
 '''
 
 from collections import defaultdict
-import time
 from threading import Condition
 
 from zktraffic.base.deque import Deque
+
+from .timer import Timer
 
 from twitter.common import log
 from twitter.common.exceptions import ExceptionalThread
@@ -33,7 +34,7 @@ from twitter.common.exceptions import ExceptionalThread
 
 class QueueStatsLoader(ExceptionalThread):
 
-  def __init__(self, max_reqs=400000, max_reps=400000, max_events=400000):
+  def __init__(self, max_reqs=400000, max_reps=400000, max_events=400000, timer=None):
     self._accumulators = {}
     self._cv = Condition()
     self._stopped = True
@@ -44,6 +45,7 @@ class QueueStatsLoader(ExceptionalThread):
     self._reply_handlers = set()
     self._event_handlers = set()
     self._auth_by_client = defaultdict(lambda: intern("noauth"))
+    self._timer = timer if timer else Timer()
     super(QueueStatsLoader, self).__init__()
     self.setDaemon(True)
 
@@ -71,7 +73,7 @@ class QueueStatsLoader(ExceptionalThread):
     log.info("Starting queue stats loader ...")
     self._stopped = False
 
-    last_min = int(time.time())
+    self._timer.reset()
     while not self._stopped:
       # update stats for available requests/replies/events
 
@@ -79,11 +81,10 @@ class QueueStatsLoader(ExceptionalThread):
       self._process_queue(self._replies, self._reply_handlers)
       self._process_queue(self._events, self._event_handlers)
 
-      cur_min = int(time.time())
-      if cur_min - last_min >= 60:
+      if self._timer.after(60):
         for accumulator in self._accumulators.values():
           accumulator.accumulate_stats()
-        last_min = cur_min
+        self._timer.reset()
 
       # wait for new requests/replies/events
       with self._cv:
