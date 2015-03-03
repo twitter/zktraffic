@@ -21,10 +21,14 @@ import time
 
 from twitter.common import log
 
-import psutil
+try:
+  import psutil
+  HAS_PSUTIL = True
+except ImportError:
+  HAS_PSUTIL = False
 
 
-class ProcessOptions(object):
+class PsUtilProcessOptions(object):
 
     def __init__(self):
         self.process = psutil.Process()
@@ -89,3 +93,30 @@ class ProcessOptions(object):
         :return: a list() of integers representing CPU cores
         """
         return [int(_) for _ in cpu_affinity_csv.split(',')]
+
+
+class DummyProcessOptions(object):
+  def set_cpu_affinity(self, _):
+    pass
+
+  @property
+  def cpu_affinity(self):
+    pass
+
+  def set_niceness(self, _):
+    pass
+
+  @property
+  def niceness(self):
+    return 0
+
+  @property
+  def uptime(self):
+    return 0
+
+  @staticmethod
+  def parse_cpu_affinity(_):
+    return []
+
+
+ProcessOptions = PsUtilProcessOptions if HAS_PSUTIL else DummyProcessOptions
