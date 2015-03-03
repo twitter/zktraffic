@@ -215,15 +215,17 @@ class Sniffer(Thread):
 
     if ip_p.data.dport == zk_port:
       client = intern("%s:%s" % (get_ip(ip_p, ip_p.src), ip_p.data.sport))
-      client_message = ClientMessage.from_payload(ip_p.data.data, client)
+      server = intern("%s:%s" % (get_ip(ip_p, ip_p.dst), zk_port))
+      client_message = ClientMessage.from_payload(ip_p.data.data, client, server)
       client_message.timestamp = timestamp
       self._track_client_message(client_message)
       return client_message
 
     if ip_p.data.sport == zk_port:
       client = intern("%s:%s" % (get_ip(ip_p, ip_p.dst), ip_p.data.dport))
+      server = intern("%s:%s" % (get_ip(ip_p, ip_p.src), zk_port))
       requests_xids = self._requests_xids.get(client, {})
-      server_message = ServerMessage.from_payload(ip_p.data.data, client, requests_xids)
+      server_message = ServerMessage.from_payload(ip_p.data.data, client, server, requests_xids)
       server_message.timestamp = timestamp
       return server_message
 

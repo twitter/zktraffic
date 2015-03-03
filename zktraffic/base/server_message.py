@@ -58,9 +58,9 @@ class ServerMessageType(type):
 
 
 class ServerMessage(ServerMessageType('ClientMessageType', (object,), {})):
-  __slots__ = ("timestamp", "xid", "zxid", "error", "path", "client", "auth")
+  __slots__ = ("timestamp", "xid", "zxid", "error", "path", "client", "auth", "server")
 
-  def __init__(self, xid, zxid, error, path, client):
+  def __init__(self, xid, zxid, error, path, client, server):
     self.timestamp = 0  # this will be set by caller later on
     self.auth = ""      # ditto
     self.xid = xid
@@ -68,6 +68,7 @@ class ServerMessage(ServerMessageType('ClientMessageType', (object,), {})):
     self.error = error
     self.path = path
     self.client = client
+    self.server = server
 
   def parent_path(self, level):
     return parent_path(self.path, level)
@@ -81,7 +82,7 @@ class ServerMessage(ServerMessageType('ClientMessageType', (object,), {})):
     return self.OPCODE
 
   @classmethod
-  def with_params(cls, xid, zxid, error, data, offset, client):
+  def with_params(cls, xid, zxid, error, data, offset, client, server):
     """Build a ServerMessage (a reply or event) with the given params, possibly parsing some more.
 
     This must be overridden by ServerMessage subclasses to offer extra parsing of
@@ -98,10 +99,10 @@ class ServerMessage(ServerMessageType('ClientMessageType', (object,), {})):
     :raises DeserializationError: if parsing the ServerMessage fails.
     """
 
-    return cls(xid, zxid, error, "", client)
+    return cls(xid, zxid, error, "", client, server)
 
   @classmethod
-  def from_payload(cls, data, client, requests_xids):
+  def from_payload(cls, data, client, server, requests_xids):
     """
     requests_xids is a dict of xid and type of prev seen client requests
     """
@@ -112,7 +113,7 @@ class ServerMessage(ServerMessageType('ClientMessageType', (object,), {})):
     (xid, zxid, err), offset = read_reply_header(data, offset)
     handler = cls.handler_for(xid, requests_xids)
     if handler:
-      return handler.with_params(xid, zxid, err, data, offset, client)
+      return handler.with_params(xid, zxid, err, data, offset, client, server)
 
     raise DeserializationError("No handler for xid=%s" % (xid))
 
@@ -132,26 +133,26 @@ class ServerMessage(ServerMessageType('ClientMessageType', (object,), {})):
     return ServerMessageType.get(request_type, None)
 
   def __str__(self):
-    return "%s(xid=%s, zxid=%s, error=%s, client=%s)\n" % (
-      self.name, self.xid, self.zxid, self.error, self.client)
+    return "%s(xid=%s, zxid=%s, error=%s, server=%s)\n" % (
+        self.name, self.xid, self.zxid, self.error, self.server)
 
 
 class WatchEvent(ServerMessage):
   OPCODE = None
 
-  def __init__(self, event_type, state, path, client):
+  def __init__(self, event_type, state, path, client, server):
     self.event_type = event_type
     self.state = state
-    super(WatchEvent, self).__init__(-1, -1, 0, path, client)
+    super(WatchEvent, self).__init__(-1, -1, 0, path, client, server)
 
   @classmethod
-  def with_params(cls, xid, zxid, error, data, offset, client):
+  def with_params(cls, xid, zxid, error, data, offset, client, server):
     (event_type, state), offset = read_int_int(data, offset)
     try:
       path, offset = read_string(data, offset)
     except StringTooLong:
       path = "path-too-long"
-    return cls(event_type, state, path, client)
+    return cls(event_type, state, path, client, server)
 
   EVENT_TYPES = defaultdict(lambda: "UnknownWatchEvent", {
     -1: "None",
@@ -166,8 +167,8 @@ class WatchEvent(ServerMessage):
     return self.EVENT_TYPES[self.event_type]
 
   def __str__(self):
-    return "Event%s(state=%s, path=%s, client=%s)\n" % (
-      self.name, self.state, self.path, self.client)
+    return "Event%s(state=%s, path=%s, client=%s, server=%s)\n" % (
+      self.name, self.state, self.path, self.client, self.server)
 
 
 class Reply(ServerMessage):
@@ -177,17 +178,17 @@ class Reply(ServerMessage):
 class ConnectReply(Reply):
   OPCODE = OpCodes.CONNECT
 
-  def __init__(self, protocol, timeout, session, passwd, readonly, client):
+  def __init__(self, protocol, timeout, session, passwd, readonly, client, server):
     self.protocol = protocol
     self.timeout = timeout
     self.session = session
     self.passwd = passwd
     self.readonly = readonly
 
-    super(ConnectReply, self).__init__(0, -1, 0, "", client)
+    super(ConnectReply, self).__init__(0, -1, 0, "", client, server)
 
   @classmethod
-  def with_params(cls, xid, zxid, error, data, offset, client):
+  def with_params(cls, xid, zxid, error, data, offset, client, server):
     """
     ConnectReply is special and doesn't have a ReplyHeader so we rewind the offset
     back to the start (i.e.: right after the reply size)
@@ -197,15 +198,15 @@ class ConnectReply(Reply):
     (protocol, timeout, session), offset = read_int_int_long(data, offset)
     passwd, offset = read_buffer(data, offset)
     readonly, offset = read_bool(data, offset)
-    return cls(protocol, timeout, session, passwd, readonly, client)
+    return cls(protocol, timeout, session, passwd, readonly, client, server)
 
   @property
   def name(self):
     return super(ConnectReply, self).name if self.timeout > 0 else "SessionExpiration"
 
   def __str__(self):
-    return "%s(ver=%s, timeout=%s, session=0x%x, readonly=%s, client=%s)\n" % (
-      self.name, self.protocol, self.timeout, self.session, self.readonly, self.client)
+    return "%s(ver=%s, timeout=%s, session=0x%x, readonly=%s, server=%s)\n" % (
+      self.name, self.protocol, self.timeout, self.session, self.readonly, self.server)
 
 
 class PingReply(Reply):
@@ -239,18 +240,18 @@ class DeleteReply(Reply):
 class GetChildrenReply(Reply):
   OPCODE = OpCodes.GETCHILDREN
 
-  def __init__(self, xid, zxid, error, count, client):
+  def __init__(self, xid, zxid, error, count, client, server):
     self.count = count
-    super(GetChildrenReply, self).__init__(xid, zxid, error, "", client)
+    super(GetChildrenReply, self).__init__(xid, zxid, error, "", client, server)
 
   @classmethod
-  def with_params(cls, xid, zxid, error, data, offset, client):
+  def with_params(cls, xid, zxid, error, data, offset, client, server):
     count, _ = read_number(data, offset) if error == 0 else (0, 0)
-    return cls(xid, zxid, error, count, client)
+    return cls(xid, zxid, error, count, client, server)
 
   def __str__(self):
-    return "%s(xid=%s, zxid=%s, error=%s, count=%s, client=%s)\n" % (
-      self.name, self.xid, self.zxid, self.error, self.count, self.client)
+    return "%s(xid=%s, zxid=%s, error=%s, count=%s, server=%s)\n" % (
+      self.name, self.xid, self.zxid, self.error, self.count, self.server)
 
 
 class GetChildren2Reply(GetChildrenReply):
@@ -261,16 +262,16 @@ class CreateReply(Reply):
   OPCODE = OpCodes.CREATE
 
   @classmethod
-  def with_params(cls, xid, zxid, error, data, offset, client):
+  def with_params(cls, xid, zxid, error, data, offset, client, server):
     try:
       path, offset = read_string(data, offset) if error == 0 else ("", offset)
     except StringTooLong:
       path = "path-too-long"
-    return cls(xid, zxid, error, path, client)
+    return cls(xid, zxid, error, path, client, server)
 
   def __str__(self):
-    return "%s(xid=%s, zxid=%s, error=%s, path=%s, client=%s)\n" % (
-      self.name, self.xid, self.zxid, self.error, self.path, self.client)
+    return "%s(xid=%s, zxid=%s, error=%s, path=%s, server=%s)\n" % (
+      self.name, self.xid, self.zxid, self.error, self.path, self.server)
 
 
 class Create2Reply(CreateReply):
@@ -284,15 +285,15 @@ class SetWatchesReply(Reply):
 class MultiReply(Reply):
   OPCODE = OpCodes.MULTI
 
-  def __init__(self, xid, zxid, error, client, first_header):
+  def __init__(self, xid, zxid, error, client, first_header, server):
     self.headers = [first_header]
-    super(MultiReply, self).__init__(xid, zxid, error, "", client)
+    super(MultiReply, self).__init__(xid, zxid, error, "", client, server)
 
   @classmethod
-  def with_params(cls, xid, zxid, error, data, offset, client):
+  def with_params(cls, xid, zxid, error, data, offset, client, server):
     (first_opcode, done, err), _ = read_int_bool_int(data, offset)
-    return cls(xid, zxid, error, client, MultiHeader(first_opcode, done, err))
+    return cls(xid, zxid, error, client, MultiHeader(first_opcode, done, err), server)
 
   def __str__(self):
-    return "%s(xid=%s, zxid=%s, error=%s, header=%s, client=%s)\n" % (
-      self.name, self.xid, self.zxid, self.error, self.headers[0], self.client)
+    return "%s(xid=%s, zxid=%s, error=%s, header=%s, server=%s)\n" % (
+      self.name, self.xid, self.zxid, self.error, self.headers[0], self.server)

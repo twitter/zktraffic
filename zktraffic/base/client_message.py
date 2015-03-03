@@ -67,15 +67,16 @@ class ClientMessageType(type):
 
 class ClientMessage(ClientMessageType('ClientMessageType', (object,), {})):
   """
-  client is ipaddr:port - it could be IPv6 so deal with that
+  client and server are ipaddr:port - it could be IPv6 so deal with that
   """
-  __slots__ = ("size", "xid", "path", "client", "timestamp", "watch", "auth")
+  __slots__ = ("size", "xid", "path", "client", "timestamp", "watch", "auth", "server")
 
-  def __init__(self, size, xid, path, client, watch):
+  def __init__(self, size, xid, path, client, watch, server):
     self.size = size
     self.xid = xid
     self.path = intern(path)
     self.client = client
+    self.server = server
     self.watch = watch
     self.timestamp = 0  # this will be set by caller later on
     self.auth = ""      # ditto
@@ -83,7 +84,7 @@ class ClientMessage(ClientMessageType('ClientMessageType', (object,), {})):
   MAX_REQUEST_SIZE = 100 * 1024 * 1024
 
   @classmethod
-  def with_params(cls, xid, path, watch, data, offset, size, client):
+  def with_params(cls, xid, path, watch, data, offset, size, client, server):
     """
     Build a ClientMessage with the given params, possibly parsing some more.
 
@@ -101,10 +102,10 @@ class ClientMessage(ClientMessageType('ClientMessageType', (object,), {})):
     :returns: Returns an instance of the specific ClientMessage subclass.
     :raises DeserializationError: if parsing the ClientMessage fails.
     """
-    return cls(size, xid, path, client, watch)
+    return cls(size, xid, path, client, watch, server)
 
   @classmethod
-  def from_payload(cls, data, client):
+  def from_payload(cls, data, client, server):
     length, offset = read_number(data, 0)
 
     # Note: the C library doesn't include the length at the start
@@ -113,7 +114,7 @@ class ClientMessage(ClientMessageType('ClientMessageType', (object,), {})):
       length = 0
     elif length == 0:
       length = 0
-      return ConnectRequest.with_params(None, None, None, data, 0, length, client)
+      return ConnectRequest.with_params(None, None, None, data, 0, length, client, server)
     elif length < 0:
       raise DeserializationError("Bad request length: %d" % (length))
     else:
@@ -123,7 +124,7 @@ class ClientMessage(ClientMessageType('ClientMessageType', (object,), {})):
         raise DeserializationError("Wrong XID: %d" % (xid))
       elif xid in ZK_VALID_PROTOCOL_VERSIONS:
         try:
-          return ConnectRequest.with_params(None, None, None, data, offs_start, length, client)
+          return ConnectRequest.with_params(None, None, None, data, offs_start, length, client, server)
         except DeserializationError:
           pass
 
@@ -132,7 +133,7 @@ class ClientMessage(ClientMessageType('ClientMessageType', (object,), {})):
     length, offset = read_number(data, offset) if length == 0 else (length, offset)
     watch, offset = read_bool(data, offset) if can_set_watch(opcode) else (False, offset)
     handler = ClientMessageType.get(opcode, cls)
-    return handler.with_params(xid, path, watch, data, offset, length, client)
+    return handler.with_params(xid, path, watch, data, offset, length, client, server)
 
   @property
   def name(self):
@@ -186,12 +187,12 @@ class Request(ClientMessage):
 class PingRequest(Request):
   OPCODE = OpCodes.PING
 
-  def __init__(self, client):
-    super(PingRequest, self).__init__(0, PING_XID, "", client, False)
+  def __init__(self, client, server):
+    super(PingRequest, self).__init__(0, PING_XID, "", client, False, server)
 
   @classmethod
-  def with_params(cls, xid, path, watch, data, offset, size, client):
-    return cls(client)
+  def with_params(cls, xid, path, watch, data, offset, size, client, server):
+    return cls(client, server)
 
   def __str__(self):
     return "%s(client=%s)\n" % (self.name, self.client)
@@ -200,17 +201,17 @@ class PingRequest(Request):
 class ConnectRequest(Request):
   OPCODE = OpCodes.CONNECT
 
-  def __init__(self, size, client, protocol, readonly, session, password, zxid, timeout):
+  def __init__(self, size, client, protocol, readonly, session, password, zxid, timeout, server):
     self.protocol = protocol
     self.readonly = readonly
     self.session = session
     self.password = password
     self.zxid = zxid
     self.timeout = timeout
-    super(ConnectRequest, self).__init__(size, 0, "", client, False)
+    super(ConnectRequest, self).__init__(size, 0, "", client, False, server)
 
   @classmethod
-  def with_params(cls, xid, path, watch, data, offset, size, client):
+  def with_params(cls, xid, path, watch, data, offset, size, client, server):
     try:
       (protocol, zxid, timeout, session), offset = read_int_long_int_long(data, offset)
     except struct.error:
@@ -222,7 +223,7 @@ class ConnectRequest(Request):
     password, offset = read_buffer(data, offset)
     readonly, offset = read_bool(data, offset)
 
-    return cls(size, client, protocol, readonly, session, password, zxid, timeout)
+    return cls(size, client, protocol, readonly, session, password, zxid, timeout, server)
 
   @property
   def name(self):
@@ -240,7 +241,7 @@ class ConnectRequest(Request):
 class SetAuthRequest(Request):
   OPCODE = OpCodes.SETAUTH
 
-  def __init__(self, auth_type, scheme, credential, size, client):
+  def __init__(self, auth_type, scheme, credential, size, client, server):
     self.auth_type = auth_type
     self.scheme = scheme
     self.credential = credential
@@ -248,10 +249,10 @@ class SetAuthRequest(Request):
     # HACK: use part of the cred as the path so we can track auth requests
     path = "/%s" % (self.credential if self.credential else "")
 
-    super(SetAuthRequest, self).__init__(size, AUTH_XID, path, client, False)
+    super(SetAuthRequest, self).__init__(size, AUTH_XID, path, client, False, server)
 
   @classmethod
-  def with_params(cls, xid, path, watch, data, offset, size, client):
+  def with_params(cls, xid, path, watch, data, offset, size, client, server):
     auth_type, offset = read_number(data, offset)
     scheme = "very-long-scheme"
     credential = "very-long-credential"
@@ -262,25 +263,25 @@ class SetAuthRequest(Request):
     except StringTooLong:
       pass
 
-    return cls(auth_type, intern(scheme), intern(credential), size, client)
+    return cls(auth_type, intern(scheme), intern(credential), size, client, server)
 
   def __str__(self):
-    return "%s(type=%s, scheme=%s, credential=%s)\n" % (
-      self.name, self.auth_type, self.scheme, self.credential)
+    return "%s(type=%s, scheme=%s, credential=%s, client=%s)\n" % (
+      self.name, self.auth_type, self.scheme, self.credential, self.client)
 
 
 class CloseRequest(Request):
   OPCODE = OpCodes.CLOSE
 
-  def __init__(self, size, xid, client):
-    super(CloseRequest, self).__init__(size, xid, "", client, False)
+  def __init__(self, size, xid, client, server):
+    super(CloseRequest, self).__init__(size, xid, "", client, False, server)
 
   @classmethod
-  def with_params(cls, xid, path, watch, data, offset, size, client):
-    return cls(size, xid, client)
+  def with_params(cls, xid, path, watch, data, offset, size, client, server):
+    return cls(size, xid, client, server)
 
   def __str__(self):
-    return "%s(client=%s)\n" % (self.name, self.client)
+    return "%s(client=%s, server=%s)\n" % (self.name, self.client, self.server)
 
 
 class Acl(namedtuple("Acl", "perm scheme cred")): pass
@@ -291,14 +292,14 @@ class CreateRequest(Request):
   MAX_ACLS = 10
   MAX_PKT_SIZE = 8192
 
-  def __init__(self, size, xid, path, client, watch, ephemeral, sequence, acls):
-    super(CreateRequest, self).__init__(size, xid, path, client, watch)
+  def __init__(self, size, xid, path, client, watch, ephemeral, sequence, acls, server):
+    super(CreateRequest, self).__init__(size, xid, path, client, watch, server)
     self.ephemeral = ephemeral
     self.sequence = sequence
     self.acls = acls
 
   @classmethod
-  def with_params(cls, xid, path, watch, data, offset, size, client):
+  def with_params(cls, xid, path, watch, data, offset, size, client, server):
     acls = []
     ephemeral = False
     sequence = False
@@ -327,7 +328,7 @@ class CreateRequest(Request):
           ephemeral = flags & 0x1 == 1
           sequence = flags & 0x2 == 2
 
-    return cls(size, xid, path, client, watch, ephemeral, sequence, acls)
+    return cls(size, xid, path, client, watch, ephemeral, sequence, acls, server)
 
   @property
   def name(self):
@@ -352,15 +353,15 @@ class SetWatchesRequest(Request):
 
   class TooManyWatches(ParsingError): pass
 
-  def __init__(self, size, xid, path, client, relzxid, data, exist, child):
-    super(SetWatchesRequest, self).__init__(size, xid, path, client, True)
+  def __init__(self, size, xid, path, client, relzxid, data, exist, child, server):
+    super(SetWatchesRequest, self).__init__(size, xid, path, client, True, server)
     self.relzxid = relzxid
     self.data = data
     self.exist = exist
     self.child = child
 
   @classmethod
-  def with_params(cls, xid, path, watch, data, offset, size, client):
+  def with_params(cls, xid, path, watch, data, offset, size, client, server):
     relzxid, offset = read_long(data, offset)
 
     dataw = existw = childw = []
@@ -371,7 +372,7 @@ class SetWatchesRequest(Request):
     except ParsingError:
       pass
 
-    return cls(size, xid, path, client, relzxid, dataw, existw, childw)
+    return cls(size, xid, path, client, relzxid, dataw, existw, childw, server)
 
   @classmethod
   def read_strings(cls, data, offset):
@@ -401,18 +402,17 @@ class SetWatchesRequest(Request):
 class MultiRequest(Request):
   OPCODE = OpCodes.MULTI
 
-  def __init__(self, size, xid, client, first_header):
-    super(MultiRequest, self).__init__(size, xid, "", client, True)
+  def __init__(self, size, xid, client, first_header, server):
+    super(MultiRequest, self).__init__(size, xid, "", client, True, server)
     self.headers = [first_header]
 
   @classmethod
-  def with_params(cls, xid, path, watch, data, offset, size, client):
+  def with_params(cls, xid, path, watch, data, offset, size, client, server):
     (first_opcode, done, err), _ = read_int_bool_int(data, offset)
     return cls(size, xid, client, MultiHeader(first_opcode, done, err))
 
   def __str__(self):
-    return "%s(%s, client=%s)\n" % (
-      self.name, self.headers[0], self.client)
+    return "%s(%s, client=%s)\n" % (self.name, self.headers[0], self.client)
 
 
 class GetChildrenRequest(Request):

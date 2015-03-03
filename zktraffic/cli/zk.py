@@ -25,6 +25,7 @@ import time
 import zlib
 
 from zktraffic.base.sniffer import Sniffer, SnifferConfig
+from zktraffic.base.zookeeper import OpCodes
 
 import colors
 from twitter.common import app
@@ -129,7 +130,11 @@ class DefaultPrinter(BasePrinter):
       self.write(*msgs)
 
   def request_handler(self, req):
-    self._requests_by_client[req.client].add(req)
+    # close requests don't have a reply, dispatch it immediately
+    if req.opcode == OpCodes.CLOSE:
+      self.write(req)
+    else:
+      self._requests_by_client[req.client].add(req)
 
   def reply_handler(self, rep):
     self._replies.append(rep)
