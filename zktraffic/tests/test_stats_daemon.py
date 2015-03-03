@@ -15,10 +15,12 @@
 # ==================================================================================================
 
 import httplib
+import json
 import socket
 import threading
 import time
 
+from zktraffic.stats.timer import Timer
 from zktraffic.endpoints.stats_server import StatsServer
 
 from .common import consume_packets
@@ -27,6 +29,20 @@ import bottle
 from twitter.common.http import HttpServer
 from twitter.common.http.diagnostics import DiagnosticsEndpoints
 
+
+class FakeTimer(Timer):
+    def __init__(self):
+        super(FakeTimer, self).__init__()
+        self._tick = False
+
+    def after(self, seconds):
+        if self._tick:
+            self._tick = False
+            return True
+        return False
+
+    def tick(self):
+        self._tick = True
 
 def test_endpoints():
   class Server(HttpServer):
@@ -37,7 +53,8 @@ def test_endpoints():
 
   bottle.ServerAdapter.quiet = True
 
-  stats = StatsServer("yolo", 2181, 1, 10, 100, 100, 100, False)
+  timer = FakeTimer()
+  stats = StatsServer("yolo", 2181, 1, 10, 100, 100, 100, False, timer)
   server = Server()
   server.mount_routes(DiagnosticsEndpoints())
   server.mount_routes(stats)
@@ -71,5 +88,32 @@ def test_endpoints():
   resp = conn.getresponse()
   assert resp.status == 200
   assert "uptime" in resp.read()
+
+  timer.tick()
+
+  # wait for stats
+  while True:
+    stats.wakeup()
+    if stats.has_stats:
+      break
+
+  conn.request("GET", "/json/paths")
+  resp = conn.getresponse()
+  assert resp.status == 200
+  paths = json.loads(resp.read())
+  assert paths["ExistsRequest/load-testing"] == 4
+  assert paths["ExistsRequestBytes/load-testing"] == 112
+  assert paths["SetDataRequest/load-testing"] == 20
+  assert paths["SetDataRequestBytes/load-testing"] == 10999
+  assert paths["reads"] == 12
+  assert paths["reads/load-testing"] == 4
+  assert paths["readsBytes"] == 3046
+  assert paths["readsBytes/load-testing"] == 112
+  assert paths["total/readBytes"] == 3158
+  assert paths["total/reads"] == 16
+  assert paths["total/writeBytes"] == 10999
+  assert paths["total/writes"] == 20
+  assert paths["writes/load-testing"] == 20
+  assert paths["writesBytes/load-testing"] == 10999
 
   conn.close()
