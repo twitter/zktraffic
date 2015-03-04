@@ -86,3 +86,10 @@ def test_connects():
 
   assert stats.global_stats.by_op_counters[OpCodes.CONNECT] == 3
   assert stats.global_stats.by_op_counters[OpCodes.CLOSE] == 3
+
+
+def test_multi():
+  zkt, stats = default_zkt()
+  consume_packets('multi', zkt)
+
+  assert stats.global_stats.by_op_counters[OpCodes.MULTI] == 1

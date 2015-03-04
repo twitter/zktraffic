@@ -409,7 +409,7 @@ class MultiRequest(Request):
   @classmethod
   def with_params(cls, xid, path, watch, data, offset, size, client, server):
     (first_opcode, done, err), _ = read_int_bool_int(data, offset)
-    return cls(size, xid, client, MultiHeader(first_opcode, done, err))
+    return cls(size, xid, client, MultiHeader(first_opcode, done, err), server)
 
   def __str__(self):
     return "%s(%s, client=%s)\n" % (self.name, self.headers[0], self.client)
