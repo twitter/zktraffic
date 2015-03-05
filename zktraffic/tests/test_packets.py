@@ -93,3 +93,4 @@ def test_multi():
   consume_packets('multi', zkt)
 
   assert stats.global_stats.by_op_counters[OpCodes.MULTI] == 1
+  assert stats.by_path["/foo"].ops_written == 1

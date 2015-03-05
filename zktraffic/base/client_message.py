@@ -402,17 +402,23 @@ class SetWatchesRequest(Request):
 class MultiRequest(Request):
   OPCODE = OpCodes.MULTI
 
-  def __init__(self, size, xid, client, first_header, server):
-    super(MultiRequest, self).__init__(size, xid, "", client, True, server)
+  def __init__(self, size, xid, client, first_header, server, path):
+    super(MultiRequest, self).__init__(size, xid, path, client, True, server)
     self.headers = [first_header]
 
   @classmethod
   def with_params(cls, xid, path, watch, data, offset, size, client, server):
-    (first_opcode, done, err), _ = read_int_bool_int(data, offset)
-    return cls(size, xid, client, MultiHeader(first_opcode, done, err), server)
+    (first_opcode, done, err), offset = read_int_bool_int(data, offset)
+
+    # get path from 1st op
+    path = "/"
+    if has_path(first_opcode):
+      path, _ = read_path(data, offset)
+
+    return cls(size, xid, client, MultiHeader(first_opcode, done, err), server, path)
 
   def __str__(self):
-    return "%s(%s, client=%s)\n" % (self.name, self.headers[0], self.client)
+    return "%s(%s, path=%s, client=%s)\n" % (self.name, self.headers[0], self.path, self.client)
 
 
 class GetChildrenRequest(Request):
