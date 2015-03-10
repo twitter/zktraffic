@@ -113,10 +113,9 @@ class DummyProcessOptions(object):
 
   @property
   def uptime(self):
-    if os.path.isfile("/proc/uptime"):
+    if os.path.exists("/proc/self"):
       try:
-        with file("/proc/uptime") as fh:
-          return fh.readlines()[0].split()[0]
+        return int(time.time() - os.stat("/proc/self").st_ctime)
       except Exception:
         pass
 
