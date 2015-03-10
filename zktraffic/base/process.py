@@ -17,6 +17,7 @@
 
 """ Process helpers used to improve zktraffic operation """
 
+import os
 import time
 
 from twitter.common import log
@@ -112,6 +113,13 @@ class DummyProcessOptions(object):
 
   @property
   def uptime(self):
+    if os.path.isfile("/proc/uptime"):
+      try:
+        with file("/proc/uptime") as fh:
+          return fh.readlines()[0].split()[0]
+      except Exception:
+        pass
+
     return 0
 
   @staticmethod
