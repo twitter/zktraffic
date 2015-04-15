@@ -9,3 +9,4 @@ twitter.common.decorators
 twitter.common.exceptions
 twitter.common.http
 twitter.common.log
+hexdump

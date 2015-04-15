@@ -51,6 +51,7 @@ def setup():
                  help='Host that should be included (you can use this multiple times)')
   app.add_option('-p', '--include-pings', default=False, action='store_true')
   app.add_option('-c', '--colors', default=False, action='store_true')
+  app.add_option('--print-bad-packet', default=False, action='store_true')
 
 
 class Requests(object):
@@ -216,6 +217,8 @@ def main(_, options):
 
   if options.include_pings:
     config.include_pings()
+
+  config.print_bad_packet = options.print_bad_packet
 
   loopback = options.iface in ["lo", "lo0"]
 

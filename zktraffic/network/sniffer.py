@@ -19,6 +19,7 @@ from collections import defaultdict
 from threading import Thread
 import logging
 import os
+import hexdump
 import signal
 import socket
 import struct
@@ -43,7 +44,7 @@ class Sniffer(Thread):
   """
   class RegistrationError(Exception): pass
 
-  def __init__(self, iface, port, msg_cls, handler=None):
+  def __init__(self, iface, port, msg_cls, handler=None, print_bad_packet=False):
     super(Sniffer, self).__init__()
     self.setDaemon(True)
 
@@ -52,6 +53,7 @@ class Sniffer(Thread):
     self._port = port
     self._packet_size = MAX_PACKET_SIZE
     self._handlers = []
+    self._print_bad_packet = print_bad_packet
 
     if handler is not None:
       self.add_handler(handler)
@@ -94,10 +96,16 @@ class Sniffer(Thread):
       message = self._message_from_packet(packet)
       for h in self._handlers:
         h(message)
-    except (BadPacket, struct.error):
-      pass
+    except (BadPacket, struct.error) as ex:
+      if self._print_bad_packet:
+        print("got: %s" % str(ex))
+        hexdump.hexdump(packet.load)
+        sys.stdout.flush()
+      else:
+        pass
     except Exception as ex:
       print("got: %s" % str(ex))
+      hexdump.hexdump(packet.load)
       sys.stdout.flush()
 
   def _message_from_packet(self, packet):

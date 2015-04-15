@@ -18,9 +18,11 @@
 from collections import defaultdict
 import logging
 import os
+import hexdump
 import signal
 import socket
 import struct
+import sys
 from threading import Thread
 
 from .client_message import ClientMessage, Request
@@ -57,6 +59,7 @@ class SnifferConfig(object):
     self.excluded_opcodes = set()
     self.is_loopback = False
     self.read_timeout_ms = 0
+    self.print_bad_packet = False
 
     # These are set after initialization, and require `update_filter` to be called
     self.included_ips = []
@@ -188,8 +191,13 @@ class Sniffer(Thread):
       if not self.config.excluded(message.opcode):
         for h in self._handlers_for(message):
           h(message)
-    except (BadPacket, DeserializationError, struct.error):
-      pass
+    except (BadPacket, DeserializationError, struct.error) as ex:
+      if self.config.print_bad_packet:
+        print("got: %s" % str(ex))
+        hexdump.hexdump(packet.load)
+        sys.stdout.flush()
+      else:
+        pass
 
   def _handlers_for(self, message):
     if isinstance(message, Request):
