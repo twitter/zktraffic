@@ -1,4 +1,4 @@
-# ZKTraffic [![Build Status](https://travis-ci.org/twitter/zktraffic.svg?branch=master)](https://travis-ci.org/twitter/zktraffic) [![Coverage Status](https://coveralls.io/repos/twitter/zktraffic/badge.png)](https://coveralls.io/r/twitter/zktraffic)
+# ZKTraffic [![Build Status](https://travis-ci.org/twitter/zktraffic.svg?branch=master)](https://travis-ci.org/twitter/zktraffic) [![Coverage Status](https://coveralls.io/repos/twitter/zktraffic/badge.png)](https://coveralls.io/r/twitter/zktraffic) [![PyPI version](https://badge.fury.io/py/zktraffic.svg)](http://badge.fury.io/py/zktraffic)
 
 **Table of Contents**
 
