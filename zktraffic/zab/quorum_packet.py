@@ -94,7 +94,7 @@ class QuorumPacketBase(type):
     return cls.TYPES.get(key, default)
 
 
-class QuorumPacket(QuorumPacketBase('QuorumPacketBase', (object,), {})):
+class QuorumPacket(QuorumPacketBase("QuorumPacketBase", (object,), {})):
   __slots__ = ("timestamp", "src", "dst", "type", "zxid", "length")
 
   MIN_SIZE = 12
@@ -137,35 +137,28 @@ class QuorumPacket(QuorumPacketBase('QuorumPacketBase', (object,), {})):
       for k in dir(self):
         v = getattr(self, k)
         cond = (isinstance(v, int) or isinstance(v, basestring)) and \
-               not k.isupper() and not k.startswith('_') and not '_literal' in k \
-               and not k == 'type'
+               not k.isupper() and not k.startswith("_") and not "_literal" in k \
+               and not k == "type"
         if cond:
-          alt_k = '%s_literal' % k
+          alt_k = "%s_literal" % k
           if hasattr(self, alt_k):
             v = getattr(self, alt_k)
           yield k, v
-    s = '%s(\n' % self.__class__.__name__
+          
+    s = "%s(\n" % self.__class__.__name__
     for k, v in gen():
-        s += ' %s=%s,\n' % (k, v)
-    s += ')\n'
+        s += " %s=%s,\n" % (k, v)
+    s += ")\n"
     return s
 
-    # return "QuorumPacket(\n%s=%s,\n%s=%s,\n%s=%s,\n%s=%s,\n%s=%s,\n%s=%s\n)\n" % (
-    #   " " * 5 + "timestamp", self.timestr,
-    #   " " * 5 + "src", self.src,
-    #   " " * 5 + "dst", self.dst,
-    #   " " * 5 + "type", self.type_literal,
-    #   " " * 5 + "zxid", self.zxid,
-    #   " " * 5 + "length", self.length,
-    # )
 
-
-class RequestQP(QuorumPacket):
+class Request(QuorumPacket):
   PTYPE = PacketType.REQUEST
   __slots__ = ("session_id", "cxid", "req_type")
+  
   def __init__(self, timestamp, src, dst, ptype, zxid, length,
                session_id, cxid, req_type):
-    super(RequestQP, self).__init__(timestamp, src, dst, ptype, zxid, length)
+    super(Request, self).__init__(timestamp, src, dst, ptype, zxid, length)
     self.session_id = session_id
     self.cxid = cxid
     self.req_type = req_type
@@ -186,12 +179,13 @@ class RequestQP(QuorumPacket):
                session_id, cxid, req_type)
 
 
-class ProposalQP(QuorumPacket):
-  __slots__ = ("client_id", "cxid", "txn_zxid", "txn_time", "txn_type")
+class Proposal(QuorumPacket):
   PTYPE = PacketType.PROPOSAL
+  __slots__ = ("client_id", "cxid", "txn_zxid", "txn_time", "txn_type")
+
   def __init__(self, timestamp, src, dst, ptype, zxid, length,
                client_id, cxid, txn_zxid, txn_time, txn_type):
-    super(ProposalQP, self).__init__(timestamp, src, dst, ptype, zxid, length)
+    super(Proposal, self).__init__(timestamp, src, dst, ptype, zxid, length)
     self.client_id = client_id
     self.cxid = cxid
     self.txn_zxid = txn_zxid
@@ -216,25 +210,25 @@ class ProposalQP(QuorumPacket):
                client_id, cxid, txn_zxid, txn_time, txn_type)
 
 
-class AckQP(QuorumPacket):
+class Ack(QuorumPacket):
   PTYPE = PacketType.ACK
 
 
-class CommitQP(QuorumPacket):
+class Commit(QuorumPacket):
   PTYPE = PacketType.COMMIT
 
 
-class PingQP(QuorumPacket):
+class Ping(QuorumPacket):
   PTYPE = PacketType.PING
   # TODO: dissect the data (in almost all cases, data is null)
 
 
-class RevalidateQP(QuorumPacket):
+class Revalidate(QuorumPacket):
   PTYPE = PacketType.REVALIDATE
   __slots__ = ("session_id", "timeout")
   def __init__(self, timestamp, src, dst, ptype, zxid, length,
                session_id, timeout):
-    super(RevalidateQP, self).__init__(timestamp, src, dst, ptype, zxid, length)
+    super(Revalidate, self).__init__(timestamp, src, dst, ptype, zxid, length)
     self.session_id = session_id
     self.timeout = timeout
 
@@ -247,20 +241,20 @@ class RevalidateQP(QuorumPacket):
                session_id, timeout)
 
 
-class SyncQP(QuorumPacket):
+class Sync(QuorumPacket):
   PTYPE = PacketType.SYNC
 
 
-class InformQP(ProposalQP):
+class Inform(Proposal):
   PTYPE = PacketType.INFORM
 
 
-class CommitAndActivateQP(QuorumPacket):
+class CommitAndActivate(QuorumPacket):
   PTYPE = PacketType.COMMITANDACTIVATE
   __slots__ = ("suggested_leader_id")
   def __init__(self, timestamp, src, dst, ptype, zxid, length,
                suggested_leader_id):
-    super(CommitAndActivateQP, self).__init__(timestamp, src, dst, ptype, zxid, length)
+    super(CommitAndActivate, self).__init__(timestamp, src, dst, ptype, zxid, length)
     self.suggested_leader_id = suggested_leader_id
 
   @classmethod
@@ -271,17 +265,17 @@ class CommitAndActivateQP(QuorumPacket):
                suggested_leader_id)
 
 
-class NewLeaderQP(QuorumPacket):
+class NewLeader(QuorumPacket):
   PTYPE = PacketType.NEWLEADER
   # TODO: dissect the data (in almost all cases, data is null)
 
 
-class FollowerInfoQP(QuorumPacket):
+class FollowerInfo(QuorumPacket):
   PTYPE = PacketType.FOLLOWERINFO
   __slots__ = ("sid", "protocol_version", "config_version")
   def __init__(self, timestamp, src, dst, ptype, zxid, length,
                sid, protocol_version, config_version):
-    super(FollowerInfoQP, self).__init__(timestamp, src, dst, ptype, zxid, length)
+    super(FollowerInfo, self).__init__(timestamp, src, dst, ptype, zxid, length)
     self.sid = sid
     self.protocol_version = protocol_version
     self.config_version = config_version
@@ -296,28 +290,28 @@ class FollowerInfoQP(QuorumPacket):
                sid, protocol_version, config_version)
 
 
-class UpToDateQP(QuorumPacket):
+class UpToDate(QuorumPacket):
   PTYPE = PacketType.UPTODATE
 
 
-class DiffQP(QuorumPacket):
+class Diff(QuorumPacket):
   PTYPE = PacketType.DIFF
 
 
-class TruncQP(QuorumPacket):
+class Trunc(QuorumPacket):
   PTYPE = PacketType.TRUNC
 
 
-class ObserverInfoQP(FollowerInfoQP):
+class ObserverInfo(FollowerInfo):
   PTYPE = PacketType.OBSERVERINFO
 
 
-class LeaderInfoQP(QuorumPacket):
+class LeaderInfo(QuorumPacket):
   PTYPE = PacketType.LEADERINFO
   __slots__ = ("protocol_version")
   def __init__(self, timestamp, src, dst, ptype, zxid, length,
                protocol_version):
-    super(LeaderInfoQP, self).__init__(timestamp, src, dst, ptype, zxid, length)
+    super(LeaderInfo, self).__init__(timestamp, src, dst, ptype, zxid, length)
     self.protocol_version = protocol_version
 
   @classmethod
@@ -328,12 +322,12 @@ class LeaderInfoQP(QuorumPacket):
                protocol_version)
 
 
-class AckEpochQP(QuorumPacket):
+class AckEpoch(QuorumPacket):
   PTYPE = PacketType.ACKEPOCH
   __slots__ = ("epoch")
   def __init__(self, timestamp, src, dst, ptype, zxid, length,
                epoch):
-    super(AckEpochQP, self).__init__(timestamp, src, dst, ptype, zxid, length)
+    super(AckEpoch, self).__init__(timestamp, src, dst, ptype, zxid, length)
     self.epoch = epoch
 
   @classmethod
@@ -344,13 +338,13 @@ class AckEpochQP(QuorumPacket):
                epoch)
 
 
-class InformAndActivateQP(ProposalQP):
+class InformAndActivate(Proposal):
   __slots__ = ("client_id", "cxid", "txn_zxid", "txn_time", "txn_type", "suggested_leader_id")
   PTYPE = PacketType.INFORMANDACTIVATE
   def __init__(self, timestamp, src, dst, ptype, zxid, length,
                suggested_leader_id,
                client_id, cxid, txn_zxid, txn_time, txn_type):
-    super(ProposalQP, self).__init__(timestamp, src, dst, ptype, zxid, length)
+    super(Proposal, self).__init__(timestamp, src, dst, ptype, zxid, length)
     self.suggested_leader_id = suggested_leader_id
     self.client_id = client_id
     self.cxid = cxid
