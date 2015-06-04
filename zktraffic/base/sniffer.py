@@ -59,7 +59,7 @@ class SnifferConfig(object):
     self.excluded_opcodes = set()
     self.is_loopback = False
     self.read_timeout_ms = 0
-    self.print_bad_packet = False
+    self.dump_bad_packet = False
 
     # These are set after initialization, and require `update_filter` to be called
     self.included_ips = []
@@ -192,12 +192,10 @@ class Sniffer(Thread):
         for h in self._handlers_for(message):
           h(message)
     except (BadPacket, DeserializationError, struct.error) as ex:
-      if self.config.print_bad_packet:
+      if self.config.dump_bad_packet:
         print("got: %s" % str(ex))
         hexdump.hexdump(packet.load)
         sys.stdout.flush()
-      else:
-        pass
 
   def _handlers_for(self, message):
     if isinstance(message, Request):

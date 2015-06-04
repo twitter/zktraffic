@@ -44,7 +44,7 @@ class Sniffer(Thread):
   """
   class RegistrationError(Exception): pass
 
-  def __init__(self, iface, port, msg_cls, handler=None, print_bad_packet=False):
+  def __init__(self, iface, port, msg_cls, handler=None, dump_bad_packet=False):
     super(Sniffer, self).__init__()
     self.setDaemon(True)
 
@@ -53,7 +53,7 @@ class Sniffer(Thread):
     self._port = port
     self._packet_size = MAX_PACKET_SIZE
     self._handlers = []
-    self._print_bad_packet = print_bad_packet
+    self._dump_bad_packet = dump_bad_packet
 
     if handler is not None:
       self.add_handler(handler)
@@ -97,12 +97,10 @@ class Sniffer(Thread):
       for h in self._handlers:
         h(message)
     except (BadPacket, struct.error) as ex:
-      if self._print_bad_packet:
+      if self._dump_bad_packet:
         print("got: %s" % str(ex))
         hexdump.hexdump(packet.load)
         sys.stdout.flush()
-      else:
-        pass
     except Exception as ex:
       print("got: %s" % str(ex))
       hexdump.hexdump(packet.load)
