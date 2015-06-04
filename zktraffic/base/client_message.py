@@ -346,20 +346,20 @@ class Create2Request(CreateRequest):
 class ReconfigRequest(Request):
   OPCODE = OpCodes.RECONFIG
 
-  def __init__(self, size, xid, client, joiningServers, leavingServers, newMembers):
-    super(ReconfigRequest, self).__init__(size, xid, "", client, False)
+  def __init__(self, size, xid, client, server, joiningServers, leavingServers, newMembers):
+    super(ReconfigRequest, self).__init__(size, xid, "", client, False, server)
     self.joiningServers = joiningServers
     self.leavingServers = leavingServers
     self.newMembers = newMembers
 
   @classmethod
-  def with_params(cls, xid, path, watch, data, offset, size, client):
+  def with_params(cls, xid, path, watch, data, offset, size, client, server):
     joiningServers, offset = read_string(data, offset)
     offset = offset + 4 if joiningServers == "" else offset
     leavingServers, offset = read_string(data, offset)
     offset = offset + 4 if leavingServers == "" else offset
     newMembers, offset = read_string(data, offset)
-    return cls(size, xid, client, joiningServers, leavingServers, newMembers)
+    return cls(size, xid, client, server, joiningServers, leavingServers, newMembers)
 
   def __str__(self):
     return "%s(xid=%d, joiningServers=%s, leavingServers=%s, newMembers=%s)\n" % (
