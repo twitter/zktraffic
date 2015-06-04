@@ -286,8 +286,7 @@ class ReconfigReply(Reply):
     return cls(xid, zxid, error, "", client, server)
 
   def __str__(self):
-    return "%s(xid=%d, error=%d)\n" % (
-      self.name, self.xid, self.error)
+    return "%s(xid=%d, error=%d)\n" % (self.name, self.xid, self.error)
 
 
 class SetWatchesReply(Reply):
