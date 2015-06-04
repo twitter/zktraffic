@@ -26,11 +26,12 @@ def setup():
   app.add_option('--iface', default='eth0', type=str)
   app.add_option('--port', default=2889, type=int)
   app.add_option('-c', '--colors', default=False, action='store_true')
+  app.add_option('--dump-bad-packet', default=False, action='store_true')
 
 
 def main(_, options):
   printer = Printer(options.colors)
-  sniffer = Sniffer(options.iface, options.port, QuorumPacket, printer.add)
+  sniffer = Sniffer(options.iface, options.port, QuorumPacket, printer.add, options.dump_bad_packet)
 
   try:
     while True:

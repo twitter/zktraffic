@@ -5,3 +5,4 @@ nose
 psutil>=2.1.0
 scapy==2.2.0-dev
 twitter.common.log
+hexdump

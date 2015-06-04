@@ -278,6 +278,17 @@ class Create2Reply(CreateReply):
   OPCODE = OpCodes.CREATE2
 
 
+class ReconfigReply(Reply):
+  OPCODE = OpCodes.RECONFIG
+
+  @classmethod
+  def with_params(cls, xid, zxid, error, data, offset, client, server):
+    return cls(xid, zxid, error, "", client, server)
+
+  def __str__(self):
+    return "%s(xid=%d, error=%d)\n" % (self.name, self.xid, self.error)
+
+
 class SetWatchesReply(Reply):
   OPCODE = OpCodes.SETWATCHES
 
