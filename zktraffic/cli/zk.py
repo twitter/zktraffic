@@ -128,7 +128,10 @@ class DefaultPrinter(BasePrinter):
 
       # HACK: if we are on the loopback, drop dupes
       msgs = reqs[0:1] + [rep] if self.loopback else reqs + [rep]
-      self.write(*msgs)
+      try:
+        self.write(*msgs)
+      except IOError:  # PIPE broken, most likely
+        break
 
   def request_handler(self, req):
     # close requests don't have a reply, dispatch it immediately
@@ -158,7 +161,10 @@ class UnpairedPrinter(BasePrinter):
         time.sleep(0.01)
         continue
 
-      self.write(msg)
+      try:
+        self.write(msg)
+      except IOError:  # PIPE broken, most likely
+        break
 
   def request_handler(self, req):
     self._messages.append(req)
@@ -232,13 +238,15 @@ def main(_, options):
   sniffer.start()
 
   try:
-    while True:
-      time.sleep(60)
+    while p.isAlive():
+      time.sleep(0.5)
   except (KeyboardInterrupt, SystemExit):
     pass
 
-  sys.stdout.write("\033[0m")
-  sys.stdout.flush()
+  try:
+    sys.stdout.write("\033[0m")
+    sys.stdout.flush()
+  except IOError: pass
 
 
 if __name__ == '__main__':

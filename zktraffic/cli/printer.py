@@ -37,6 +37,8 @@ class Printer(Thread):
         self._print(self._queue.popleft())
       except IndexError:
         time.sleep(0.1)
+      except IOError:  # PIPE broken, most likely
+        break
 
   def _print_default(self, msg):
     sys.stdout.write(str(msg))
