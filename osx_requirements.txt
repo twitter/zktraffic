@@ -4,5 +4,5 @@ mock
 nose
 psutil>=2.1.0
 scapy==2.2.0-dev
-twitter.common.log
+twitter.common.log==0.3.3
 hexdump
