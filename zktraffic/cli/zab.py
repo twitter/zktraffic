@@ -34,7 +34,7 @@ def main(_, options):
   sniffer = Sniffer(options.iface, options.port, QuorumPacket, printer.add, options.dump_bad_packet)
 
   try:
-    while True:
+    while printer.isAlive():
       sniffer.join(1)
   except (KeyboardInterrupt, SystemExit):
     pass
