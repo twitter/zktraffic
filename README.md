@@ -42,16 +42,16 @@ Or you can build PEX files — from the source — for any of the available tool
 $ pip install pex
 
 # zk-dump
-$ pex -s . -v -e zktraffic.cli.zk -o zk-dump.pex
+$ pex -v -e zktraffic.cli.zk -o zk-dump.pex .
 
 # zk-stats-daemon
-$ pex -s . -v -e zktraffic.cli.stats_daemon -o stats-daemon.pex
+$ pex -v -e zktraffic.cli.stats_daemon -o stats-daemon.pex .
 
 # zab-dump
-$ pex -s . -v -e zktraffic.cli.zab -o zab-dump.pex
+$ pex -v -e zktraffic.cli.zab -o zab-dump.pex .
 
 # fle-dump
-$ pex -s . -v -e zktraffic.cli.fle -o fle-dump.pex
+$ pex -v -e zktraffic.cli.fle -o fle-dump.pex .
 
 ```
 
