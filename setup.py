@@ -63,6 +63,7 @@ setup(name='zktraffic',
       install_requires=[
           'ansicolors',
           'dpkt-fix',
+          'hexdump',
           'psutil>=2.1.0',
           'scapy==2.2.0-dev',
           'twitter.common.app==0.3.3',
