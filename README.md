@@ -85,7 +85,6 @@ It has a front-end, zk-dump, that can be used in interactive mode to dump traffi
 ```
 # need root or CAP_NET_ADMIN & CAP_NET_RAW
 $ sudo zk-dump --iface eth0
-Writing log files to disk in /var/tmp
 21:08:05:991542 ConnectRequest(ver=0, zxid=0, timeout=10000, session=0x0, readonly=False, client=127.0.0.1:50049)
 ————————►21:08:06:013513 ConnectReply(ver=0, timeout=10000, session=0x148cf0aedc60000, readonly=False, client=127.0.0.1:50049)
 21:08:07:432361 ExistsRequest(xid=1, path=/, watch=False, size=14, client=127.0.0.1:50049)
@@ -209,8 +208,6 @@ who will lead and the mechanism by which the leader is subsequently discovered):
 
 ```
 $ sudo fle-dump --iface eth0 -c
-Writing log files to disk in /var/tmp
- INFO] Setting filter: port 3888
 Notification(
      timestamp=00:57:12:593254,
      src=10.0.0.1:32938,
