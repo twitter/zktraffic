@@ -18,6 +18,7 @@
 
 from collections import defaultdict, deque
 from datetime import datetime
+
 import socket
 import sys
 import threading
@@ -29,9 +30,12 @@ from zktraffic.base.zookeeper import OpCodes
 
 import colors
 from twitter.common import app
+from twitter.common.log.options import LogOptions
 
 
 def setup():
+  LogOptions.set_stderr_log_level('NONE')
+
   app.add_option('--iface', default='eth0', type=str)
   app.add_option('--client-port', default=0, type=int)
   app.add_option('--zookeeper-port', default=2181, type=int)
@@ -52,6 +56,10 @@ def setup():
   app.add_option('-p', '--include-pings', default=False, action='store_true')
   app.add_option('-c', '--colors', default=False, action='store_true')
   app.add_option('--dump-bad-packet', default=False, action='store_true')
+  app.add_option('--count-requests', default=0, type=int,
+                 help='Count N requests and report a sorted summary (default: sort by path)')
+  app.add_option('--sort-by', default='path', type=str,
+                 help='Only makes sense with --count-requests. Possible values: path or type')
 
 
 class Requests(object):
@@ -176,6 +184,44 @@ class UnpairedPrinter(BasePrinter):
     self._messages.append(evt)
 
 
+class CountPrinter(BasePrinter):
+  """ use to accumulate up to N requests and then print a summary """
+  def __init__(self, count, sort_by, loopback):
+    super(CountPrinter, self).__init__(False, loopback)
+    self.count, self.sort_by = count, sort_by
+    self.seen = 0
+    self.requests = defaultdict(int)
+
+  def run(self):
+    while self.seen < self.count:
+      time.sleep(0.001)
+
+    results = sorted(self.requests.items(), key=lambda item: item[1], reverse=True)
+    for res in results:
+       sys.stdout.write("%s %d\n" % res)
+    sys.stdout.flush()
+
+  def request_handler(self, req):
+    self._add(req)
+
+  def reply_handler(self, rep):
+    """ we only care about requests & watches """
+    pass
+
+  def event_handler(self, evt):
+    self._add(evt)
+
+  def _add(self, msg):
+    if self.seen >= self.count:
+      return
+
+    # eventually we should grab a lock here, but as of now
+    # this is only called from a single thread.
+    key = msg.path if self.sort_by == "path" else msg.name
+    self.requests[key] += 1
+    self.seen += 1
+
+
 def expand_hosts(hosts):
   """ given a list of hosts, expand to its IPs """
   ips = set()
@@ -211,7 +257,7 @@ def main(_, options):
   config.client_port = options.client_port if options.client_port != 0 else config.client_port
 
   if options.excluded_hosts and options.included_hosts:
-    sys.stderr.write("The flags --include-host and --exclude-host can't be mixed")
+    sys.stderr.write("The flags --include-host and --exclude-host can't be mixed.\n")
     sys.exit(1)
 
   if options.excluded_hosts:
@@ -228,7 +274,13 @@ def main(_, options):
 
   loopback = options.iface in ["lo", "lo0"]
 
-  if options.unpaired:
+  if options.count_requests > 0:
+    if options.sort_by not in ["path", "type"]:
+      sys.stderr.write("Unknown value for --sort-by, use 'path' or 'type'.\n")
+      sys.exit(1)
+
+    p = CountPrinter(options.count_requests, options.sort_by, loopback)
+  elif options.unpaired:
     p = UnpairedPrinter(options.colors, loopback)
   else:
     p = DefaultPrinter(options.colors, loopback)

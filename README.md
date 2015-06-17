@@ -30,7 +30,24 @@ $ cd zktraffic
 $ sudo ZKTRAFFIC_SOURCE=1 bin/zk-dump --iface=eth0
 ```
 
-Or the stats gathering daemon:
+To get a quick count of requests by path:
+
+```
+$ sudo ZKTRAFFIC_SOURCE=1 bin/zk-dump --iface=eth0 --count-requests 10000 --sort-by path
+/ 1749
+/services/prod/search 846
+/configs/teleportation/features 843
+```
+
+Or by type:
+
+```
+$ sudo ZKTRAFFIC_SOURCE=1 bin/zk-dump --iface=eth0 --count-requests 10000 --sort-by type
+GetChildrenRequest 9044
+ExistsRequest 958
+```
+
+Or use the stats gathering daemon:
 
 ```
 $ sudo ZKTRAFFIC_SOURCE=1 bin/zk-stats-daemon --iface=eth0 --http-port=9090
