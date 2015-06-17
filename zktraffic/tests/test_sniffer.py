@@ -40,7 +40,9 @@ class TestSniffer(TestCase):
         filter=self.zkt.config.filter,
         store=0,
         prn=self.zkt.handle_packet,
-        iface=self.zkt.config.iface)
+        iface=self.zkt.config.iface,
+        stop_filter=self.zkt.wants_stop
+    )
     mock_kill.assert_called_once_with(os.getpid(), signal.SIGINT)
 
   @mock.patch('os.kill', spec=os.kill)
@@ -52,7 +54,9 @@ class TestSniffer(TestCase):
         filter=self.zkt.config.filter,
         store=0,
         prn=self.zkt.handle_packet,
-        iface=self.zkt.config.iface)
+        iface=self.zkt.config.iface,
+        stop_filter=self.zkt.wants_stop
+    )
     mock_kill.assert_called_once_with(os.getpid(), signal.SIGINT)
 
   def test_exclude(self):

@@ -69,14 +69,6 @@ class Sniffer(Thread):
 
     self._handlers.append(handler)
 
-  def pause(self):
-    """ TODO(rgs): scapy doesn't expose a way to call breakloop() """
-    pass
-
-  def unpause(self):
-    """ TODO(rgs): scapy doesn't expose a way to call unpause the main loop() """
-    pass
-
   def run(self):
     pfilter = "port %d" % self._port
     try:

@@ -140,6 +140,7 @@ class Sniffer(Thread):
     self._reply_handlers = []
     self._event_handlers = []
     self._requests_xids = defaultdict(dict)  # if tracking replies, keep a tab for seen reqs
+    self._wants_stop = False
 
     self.config = config
 
@@ -148,6 +149,9 @@ class Sniffer(Thread):
     self.add_event_handler(event_handler)
 
     self.setDaemon(True)
+
+  def stop(self):
+    self._wants_stop = True
 
   def add_request_handler(self, handler):
     self._add_handler(self._request_handlers, handler)
@@ -167,21 +171,27 @@ class Sniffer(Thread):
 
     handlers.append(handler)
 
-  def pause(self):
-    """ TODO(rgs): scapy doesn't expose a way to call breakloop() """
-    pass
-
-  def unpause(self):
-    """ TODO(rgs): scapy doesn't expose a way to call unpause the main loop() """
-    pass
+  def wants_stop(self, *args, **kwargs):
+    return self._wants_stop
 
   def run(self):
     try:
       log.info("Setting filter: %s", self.config.filter)
       if self.config.iface == "any":
-        sniff(filter=self.config.filter, store=0, prn=self.handle_packet)
+        sniff(
+          filter=self.config.filter,
+          store=0,
+          prn=self.handle_packet,
+          stop_filter=self.wants_stop
+        )
       else:
-        sniff(filter=self.config.filter, store=0, prn=self.handle_packet, iface=self.config.iface)
+        sniff(
+          filter=self.config.filter,
+          store=0,
+          prn=self.handle_packet,
+          iface=self.config.iface,
+          stop_filter=self.wants_stop
+        )
     except socket.error as ex:
       if self._error_to_stderr:
         sys.stderr.write("Error: %s, device: %s\n" % (ex, self.config.iface))

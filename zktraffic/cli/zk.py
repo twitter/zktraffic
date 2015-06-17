@@ -308,6 +308,11 @@ def main(_, options):
   except (KeyboardInterrupt, SystemExit):
     pass
 
+  # shutdown sniffer
+  sniffer.stop()
+  while sniffer.isAlive():
+    time.sleep(0.001)
+
   try:
     sys.stdout.write("\033[0m")
     sys.stdout.flush()
