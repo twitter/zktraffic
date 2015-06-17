@@ -20,9 +20,12 @@ from zktraffic.network.sniffer import Sniffer
 from zktraffic.zab.quorum_packet import QuorumPacket
 
 from twitter.common import app
+from twitter.common.log.options import LogOptions
 
 
 def setup():
+  LogOptions.set_stderr_log_level('NONE')
+
   app.add_option('--iface', default='eth0', type=str)
   app.add_option('--port', default=2889, type=int)
   app.add_option('-c', '--colors', default=False, action='store_true')

@@ -29,9 +29,12 @@ from zktraffic.base.zookeeper import OpCodes
 
 import colors
 from twitter.common import app
+from twitter.common.log.options import LogOptions
 
 
 def setup():
+  LogOptions.set_stderr_log_level('NONE')
+
   app.add_option('--iface', default='eth0', type=str)
   app.add_option('--client-port', default=0, type=int)
   app.add_option('--zookeeper-port', default=2181, type=int)
