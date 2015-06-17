@@ -14,8 +14,11 @@
 # limitations under the License.
 # ==================================================================================================
 
+import sys
+
 from .printer import Printer
 
+from zktraffic import __version__
 from zktraffic.network.sniffer import Sniffer
 from zktraffic.zab.quorum_packet import QuorumPacket
 
@@ -30,9 +33,14 @@ def setup():
   app.add_option('--port', default=2889, type=int)
   app.add_option('-c', '--colors', default=False, action='store_true')
   app.add_option('--dump-bad-packet', default=False, action='store_true')
+  app.add_option('--version', default=False, action='store_true')
 
 
 def main(_, options):
+  if options.version:
+    sys.stdout.write("%s\n" % __version__)
+    sys.exit(0)
+
   printer = Printer(options.colors)
   sniffer = Sniffer(options.iface, options.port, QuorumPacket, printer.add, options.dump_bad_packet)
 

@@ -16,8 +16,10 @@
 
 import signal
 import socket
+import sys
 import time
 
+from zktraffic import __version__
 from zktraffic.endpoints.stats_server import StatsServer
 from zktraffic.base.process import ProcessOptions
 
@@ -86,6 +88,7 @@ def setup():
                  type=int,
                  default=400000,
                  help="max queued events")
+  app.add_option('--version', default=False, action='store_true')
 
 
 class Server(HttpServer):
@@ -93,6 +96,11 @@ class Server(HttpServer):
 
 
 def main(_, opts):
+
+  if opts.version:
+    sys.stdout.write("%s\n" % __version__)
+    sys.exit(0)
+
   stats = StatsServer(opts.iface,
                       opts.zookeeper_port,
                       opts.aggregation_depth,

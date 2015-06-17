@@ -25,6 +25,7 @@ import threading
 import time
 import zlib
 
+from zktraffic import __version__
 from zktraffic.base.sniffer import Sniffer, SnifferConfig
 from zktraffic.base.zookeeper import OpCodes
 
@@ -60,6 +61,7 @@ def setup():
                  help='Count N requests and report a sorted summary (default: sort by path)')
   app.add_option('--sort-by', default='path', type=str,
                  help='Only makes sense with --count-requests. Possible values: path or type')
+  app.add_option('--version', default=False, action='store_true')
 
 
 class Requests(object):
@@ -250,6 +252,11 @@ def get_ips(host, port=0):
 
 
 def main(_, options):
+
+  if options.version:
+    sys.stdout.write("%s\n" % __version__)
+    sys.exit(0)
+
   config = SnifferConfig(options.iface)
   config.track_replies = True
   config.zookeeper_port = options.zookeeper_port
