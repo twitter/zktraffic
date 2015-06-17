@@ -286,7 +286,13 @@ def main(_, options):
     p = DefaultPrinter(options.colors, loopback)
   p.start()
 
-  sniffer = Sniffer(config, p.request_handler, p.reply_handler, p.event_handler)
+  sniffer = Sniffer(
+    config,
+    p.request_handler,
+    p.reply_handler,
+    p.event_handler,
+    error_to_stderr=True
+  )
   sniffer.start()
 
   try:
