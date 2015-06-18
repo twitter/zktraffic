@@ -16,6 +16,8 @@
 
 
 from collections import defaultdict
+from threading import Thread
+
 import logging
 import os
 import hexdump
@@ -23,7 +25,6 @@ import signal
 import socket
 import struct
 import sys
-from threading import Thread
 
 from .client_message import ClientMessage, Request
 from .network import BadPacket, get_ip, get_ip_packet
@@ -119,10 +120,11 @@ class Sniffer(Thread):
   class RegistrationError(Exception): pass
 
   def __init__(self,
-      config,
-      request_handler=None,
-      reply_handler=None,
-      event_handler=None):
+               config,
+               request_handler=None,
+               reply_handler=None,
+               event_handler=None,
+               error_to_stderr=False):
     """
     This sniffer will intercept:
      - client requests
@@ -132,11 +134,13 @@ class Sniffer(Thread):
     """
     super(Sniffer, self).__init__()
 
+    self._error_to_stderr = error_to_stderr
     self._packet_size = 65535
     self._request_handlers = []
     self._reply_handlers = []
     self._event_handlers = []
     self._requests_xids = defaultdict(dict)  # if tracking replies, keep a tab for seen reqs
+    self._wants_stop = False
 
     self.config = config
 
@@ -145,6 +149,9 @@ class Sniffer(Thread):
     self.add_event_handler(event_handler)
 
     self.setDaemon(True)
+
+  def stop(self):
+    self._wants_stop = True
 
   def add_request_handler(self, handler):
     self._add_handler(self._request_handlers, handler)
@@ -164,23 +171,32 @@ class Sniffer(Thread):
 
     handlers.append(handler)
 
-  def pause(self):
-    """ TODO(rgs): scapy doesn't expose a way to call breakloop() """
-    pass
-
-  def unpause(self):
-    """ TODO(rgs): scapy doesn't expose a way to call unpause the main loop() """
-    pass
+  def wants_stop(self, *args, **kwargs):
+    return self._wants_stop
 
   def run(self):
     try:
       log.info("Setting filter: %s", self.config.filter)
       if self.config.iface == "any":
-        sniff(filter=self.config.filter, store=0, prn=self.handle_packet)
+        sniff(
+          filter=self.config.filter,
+          store=0,
+          prn=self.handle_packet,
+          stop_filter=self.wants_stop
+        )
       else:
-        sniff(filter=self.config.filter, store=0, prn=self.handle_packet, iface=self.config.iface)
+        sniff(
+          filter=self.config.filter,
+          store=0,
+          prn=self.handle_packet,
+          iface=self.config.iface,
+          stop_filter=self.wants_stop
+        )
     except socket.error as ex:
-      log.error("Error: %s, device: %s", ex, self.config.iface)
+      if self._error_to_stderr:
+        sys.stderr.write("Error: %s, device: %s\n" % (ex, self.config.iface))
+      else:
+        log.error("Error: %s, device: %s", ex, self.config.iface)
     finally:
       log.info("The sniff loop exited")
       os.kill(os.getpid(), signal.SIGINT)
@@ -247,6 +263,11 @@ class Sniffer(Thread):
     if self.config.track_replies and not request.is_ping and not request.is_close:
       requests_xids = self._requests_xids[request.client]
       if len(requests_xids) > self.config.max_queued_requests:
-        log.error("Too many queued requests, replies for %s will be lost", request.client)
+        if self._error_to_stderr:
+          sys.stderr.write("Too many queued requests, replies for %s will be lost\n" %
+                           request.client)
+        else:
+          log.error("Too many queued requests, replies for %s will be lost", request.client)
         return
+
       requests_xids[request.xid] = request.opcode

@@ -17,9 +17,10 @@
 from __future__ import print_function
 from collections import defaultdict
 from threading import Thread
+
+import hexdump
 import logging
 import os
-import hexdump
 import signal
 import socket
 import struct
@@ -29,7 +30,6 @@ from zktraffic.base.network import BadPacket, get_ip, get_ip_packet
 
 from scapy.sendrecv import sniff
 from scapy.config import conf as scapy_conf
-from twitter.common import log
 
 
 scapy_conf.logLevel = logging.ERROR  # shush scappy
@@ -69,26 +69,16 @@ class Sniffer(Thread):
 
     self._handlers.append(handler)
 
-  def pause(self):
-    """ TODO(rgs): scapy doesn't expose a way to call breakloop() """
-    pass
-
-  def unpause(self):
-    """ TODO(rgs): scapy doesn't expose a way to call unpause the main loop() """
-    pass
-
   def run(self):
     pfilter = "port %d" % self._port
     try:
-      log.info("Setting filter: %s", pfilter)
       if self._iface == "any":
         sniff(filter=pfilter, store=0, prn=self.handle_packet)
       else:
         sniff(filter=pfilter, store=0, prn=self.handle_packet, iface=self._iface)
     except socket.error as ex:
-      log.error("Error: %s, device: %s", ex, self._iface)
+      sys.stderr.write("Error: %s, device: %s\n" % (ex, self._iface))
     finally:
-      log.info("The sniff loop exited")
       os.kill(os.getpid(), signal.SIGINT)
 
   def handle_packet(self, packet):
