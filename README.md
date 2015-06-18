@@ -311,7 +311,7 @@ $ pip install -r ./osx_requirements.txt
 * ansicolors
 * dpkt-fix
 * psutil>=2.1.0
-* scapy==2.2.0-dev
+* scapy==2.3.1
 * twitter.common.app
 * twitter.common.collections
 * twitter.common.exceptions

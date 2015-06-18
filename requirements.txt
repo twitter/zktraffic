@@ -2,7 +2,7 @@ dpkt-fix
 mock
 nose
 psutil>=2.1.0
-scapy==2.2.0-dev
+scapy==2.3.1
 twitter.common.app==0.3.3
 twitter.common.collections==0.3.3
 twitter.common.decorators==0.3.3
