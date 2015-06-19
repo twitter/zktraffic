@@ -6,7 +6,9 @@ ChangeLog
 
 Bug Handling
 ************
--
+- per-path aggregation for watches wasn't working
+- silence scapy logging
+- add missing help strings and their defaults
 
 Features
 ********
