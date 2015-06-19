@@ -105,11 +105,10 @@ class QueueStatsLoader(ExceptionalThread):
       try:
         _ = [handler(item) for handler in handlers]
       except Exception as ex:
-        log.error("Handler call failed for item %s, %s, %s failed. %s",
-            item.name,
-            item.path,
-            item.ip,
-            ex)
+        name = getattr(item, "name", "")
+        path = getattr(item, "path", "")
+        ip = getattr(item, "ip", "")
+        log.error("Handler call for item %s, %s, %s failed: %s", name, path, ip, ex)
 
   def handle_request(self, request):
     if request.is_auth:

@@ -62,7 +62,7 @@ class TopStatsAccumulator(object):
     self._cur_stats["total"]["/readBytes"] = 0
 
   def get_path(self, message, suffix=None):
-    if self._aggregation_depth > 0:
+    if self._aggregation_depth > 0 and message.path:
       path = message.parent_path(self._aggregation_depth)
     else:
       path = message.path
@@ -109,10 +109,14 @@ class PerPathStatsAccumulator(TopStatsAccumulator):
     self._update_request_stats(self.get_path(request), request)
 
   def update_reply_stats(self, reply):
-    self._cur_stats[reply.name][reply.path] += 1
+    path = self.get_path(reply)
+    log.debug("Reply stats update : %s, %s", reply.name, path)
+    self._cur_stats[reply.name][path] += 1
 
   def update_event_stats(self, event):
-    self._cur_stats[event.name][event.path] += 1
+    path = self.get_path(event)
+    log.debug("Event stats update : %s, %s", event.name, path)
+    self._cur_stats[event.name][path] += 1
 
 
 class PerIPStatsAccumulator(TopStatsAccumulator):
