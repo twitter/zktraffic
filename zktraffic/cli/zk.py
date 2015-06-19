@@ -37,11 +37,16 @@ from twitter.common.log.options import LogOptions
 def setup():
   LogOptions.set_stderr_log_level('NONE')
 
-  app.add_option('--iface', default='eth0', type=str)
-  app.add_option('--client-port', default=0, type=int)
-  app.add_option('--zookeeper-port', default=2181, type=int)
-  app.add_option('--max-queued-requests', default=10000, type=int)
-  app.add_option('--unpaired', default=False, action='store_true', help='Don\'t pair reqs/reps')
+  app.add_option('--iface', default='eth0', type=str,
+                 help='The interface to sniff on')
+  app.add_option('--client-port', default=0, type=int,
+                 help='The client port to filter by')
+  app.add_option('--zookeeper-port', default=2181, type=int,
+                 help='The ZooKeeper server port to filter by')
+  app.add_option('--max-queued-requests', default=10000, type=int,
+                 help='The maximum number of requests queued to be deserialized')
+  app.add_option('--unpaired', default=False, action='store_true',
+                 help='Don\'t pair reqs/reps')
   app.add_option('--exclude-host',
                  dest='excluded_hosts',
                  metavar='HOST',
@@ -54,9 +59,12 @@ def setup():
                  default=[],
                  action='append',
                  help='Host that should be included (you can use this multiple times)')
-  app.add_option('-p', '--include-pings', default=False, action='store_true')
-  app.add_option('-c', '--colors', default=False, action='store_true')
-  app.add_option('--dump-bad-packet', default=False, action='store_true')
+  app.add_option('-p', '--include-pings', default=False, action='store_true',
+                 help='Whether to include ping requests and replies')
+  app.add_option('-c', '--colors', default=False, action='store_true',
+                 help='Color each client/server stream differently')
+  app.add_option('--dump-bad-packet', default=False, action='store_true',
+                 help='If unable to to deserialize a packet, print it out')
   app.add_option('--count-requests', default=0, type=int,
                  help='Count N requests and report a sorted summary (default: sort by path)')
   app.add_option('--sort-by', default='path', type=str,
