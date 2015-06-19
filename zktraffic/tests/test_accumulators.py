@@ -70,7 +70,7 @@ class TestableStatsLoader(object):
     return self._accumulator._cur_stats
 
 
-NUMBER_OF_REQUESTS_SET_DATA = 33
+NUMBER_OF_REQUESTS_SET_DATA = 35
 NUMBER_OF_REQUESTS_WATCHES = 5
 SLEEP_MAX = 5.0
 
@@ -107,7 +107,7 @@ def test_init_path_stats():
   #add some traffic
   zkt = Sniffer(SnifferConfig())
   zkt.add_request_handler(stats.handle_request)
-  wait_for_stats(zkt, "set_data", lambda: stats.processed_requests < 1)
+  wait_for_stats(zkt, "set_data", lambda: stats.processed_requests < NUMBER_OF_REQUESTS_SET_DATA)
   cur_stats = stats.cur_stats
 
   #writes for / should stay 0
