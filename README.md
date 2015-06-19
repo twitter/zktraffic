@@ -47,6 +47,28 @@ GetChildrenRequest 9044
 ExistsRequest 958
 ```
 
+You can also measure latencies by path (avg, p95 and p99):
+
+```
+$ sudo ZKTRAFFIC_SOURCE=1 bin/zk-dump --measure-latency 1000 --group-by path --aggregation-depth 2 --sort-by p99
+path                     avg         p95         p99
+---------------  -----------  ----------  ----------
+/party/services  0.000199077  0.00048846  0.00267805
+/party           0.000349498  0.00136839  0.00201204
+/party/configs   0.000157728  0.00036664  0.00122663
+```
+
+Or by type:
+
+```
+$ sudo ZKTRAFFIC_SOURCE=1 bin/zk-dump --measure-latency 1000 --group-by type --sort-by p99
+type                            avg          p95          p99
+----------------------  -----------  -----------  -----------
+CreateEphemeralRequest  0.000735009  0.000978041  0.0032404
+GetChildrenRequest      0.000182547  0.000453258  0.00220628
+ExistsRequest           0.000162728  0.000430155  0.000862937
+```
+
 Or use the stats gathering daemon:
 
 ```
