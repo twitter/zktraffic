@@ -24,42 +24,72 @@ from zktraffic.stats.accumulators import PerPathStatsAccumulator
 from .common import consume_packets
 
 
-class TestablePerPathAccumulators(QueueStatsLoader):
-  def __init__(self, aggregation_depth=0):
+class TestablePerPathAccumulator(PerPathStatsAccumulator):
+  def __init__(self, *args, **kwargs):
+    super(TestablePerPathAccumulator, self).__init__(*args, **kwargs)
     self.processed_requests = 0
-    super(TestablePerPathAccumulators, self).__init__()
-    self.register_accumulator('0', PerPathStatsAccumulator(aggregation_depth))
-
-  def cur_stats(self):
-    return self._accumulators['0']._cur_stats
+    self.processed_events = 0
 
   def update_request_stats(self, request):
+    super(TestablePerPathAccumulator, self).update_request_stats(request)
     self.processed_requests += 1
-    self._accumulators['0'].update_request_stats(request)
+
+  def update_event_stats(self, event):
+    super(TestablePerPathAccumulator, self).update_event_stats(event)
+    self.processed_events += 1
 
 
-NUMBER_OF_REQUESTS_SET_DATA = 30
-NUMBER_OF_REQUESTS_WATCHES = 4
-SLEEP_MAX = 2
+class TestableStatsLoader(object):
+  def __init__(self, aggregation_depth):
+    self._loader = QueueStatsLoader()
+    self._accumulator = TestablePerPathAccumulator(aggregation_depth)
+    self._loader.register_accumulator('0', self._accumulator)
+    self._loader.start()
+
+  @property
+  def processed_requests(self):
+    return self._accumulator.processed_requests
+
+  @property
+  def processed_events(self):
+    return self._accumulator.processed_events
+
+  def stop(self):
+    self._loader.stop()
+
+  @property
+  def handle_request(self):
+    return self._loader.handle_request
+
+  @property
+  def handle_event(self):
+    return self._loader.handle_event
+
+  @property
+  def cur_stats(self):
+    return self._accumulator._cur_stats
 
 
-def wait_for_stats(zkt, stats, pcap_file, expected_requests):
+NUMBER_OF_REQUESTS_SET_DATA = 33
+NUMBER_OF_REQUESTS_WATCHES = 5
+SLEEP_MAX = 5.0
+
+
+def wait_for_stats(zkt, pcap_file, loop_cond):
   consume_packets(pcap_file, zkt)
   slept = 0
+  sleep_size = 0.001
 
-  while stats.processed_requests < expected_requests:
-    time.sleep(0.5)
-    slept += 0.5
+  while loop_cond():
+    time.sleep(sleep_size)
+    slept += sleep_size
     if slept > SLEEP_MAX:
       break
 
-  return stats.cur_stats()
-
 
 def test_init_path_stats():
-  stats = TestablePerPathAccumulators(aggregation_depth=1)
-  stats.start()
-  cur_stats = stats.cur_stats()
+  stats = TestableStatsLoader(aggregation_depth=1)
+  cur_stats = stats.cur_stats
   assert "writes" in cur_stats
   assert "/" in cur_stats["writes"]
   assert "writesBytes" in cur_stats
@@ -77,7 +107,8 @@ def test_init_path_stats():
   #add some traffic
   zkt = Sniffer(SnifferConfig())
   zkt.add_request_handler(stats.handle_request)
-  cur_stats = wait_for_stats(zkt, stats, "set_data", 1)
+  wait_for_stats(zkt, "set_data", lambda: stats.processed_requests < 1)
+  cur_stats = stats.cur_stats
 
   #writes for / should stay 0
   assert cur_stats["writes"]["/"] == 0
@@ -86,12 +117,13 @@ def test_init_path_stats():
   stats.stop()
 
 def test_per_path_stats():
-  stats = TestablePerPathAccumulators(aggregation_depth=1)
-  stats.start()
+  stats = TestableStatsLoader(aggregation_depth=1)
   zkt = Sniffer(SnifferConfig())
   zkt.add_request_handler(stats.handle_request)
 
-  cur_stats = wait_for_stats(zkt, stats, "set_data", NUMBER_OF_REQUESTS_SET_DATA)
+  wait_for_stats(
+    zkt, "set_data", lambda: stats.processed_requests < NUMBER_OF_REQUESTS_SET_DATA)
+  cur_stats = stats.cur_stats
 
   assert cur_stats["writes"]["/load-testing"] == 20
   assert cur_stats["SetDataRequest"]["/load-testing"] == 20
@@ -100,12 +132,13 @@ def test_per_path_stats():
 
 
 def test_per_path_stats_aggregated():
-  stats = TestablePerPathAccumulators(aggregation_depth=2)
-  stats.start()
+  stats = TestableStatsLoader(aggregation_depth=2)
   zkt = Sniffer(SnifferConfig())
   zkt.add_request_handler(stats.handle_request)
 
-  cur_stats = wait_for_stats(zkt, stats, "set_data", NUMBER_OF_REQUESTS_SET_DATA)
+  wait_for_stats(
+    zkt, "set_data", lambda: stats.processed_requests < NUMBER_OF_REQUESTS_SET_DATA)
+  cur_stats = stats.cur_stats
 
   for i in range(0, 5):
     assert cur_stats["writes"]["/load-testing/%d" % (i)] == 4
@@ -117,16 +150,31 @@ def test_per_path_stats_aggregated():
   stats.stop()
 
 
-def test_watches():
-  stats = TestablePerPathAccumulators(aggregation_depth=1)
-  stats.start()
+def test_setting_watches():
+  stats = TestableStatsLoader(aggregation_depth=1)
   zkt = Sniffer(SnifferConfig())
   zkt.add_request_handler(stats.handle_request)
 
-  cur_stats = wait_for_stats(zkt, stats, "getdata_watches", NUMBER_OF_REQUESTS_WATCHES)
+  wait_for_stats(
+    zkt, "getdata_watches", lambda: stats.processed_requests < NUMBER_OF_REQUESTS_WATCHES)
+  cur_stats = stats.cur_stats
 
   assert cur_stats["watches"]["/test"] == 2
   assert cur_stats["GetDataRequest"]["/test"] == 2
   assert cur_stats["GetChildrenRequest"]["/test"] == 2
+
+  stats.stop()
+
+
+def test_firing_watches():
+  stats = TestableStatsLoader(aggregation_depth=2)
+  zkt = Sniffer(SnifferConfig())
+  zkt.add_request_handler(stats.handle_request)
+  zkt.add_event_handler(stats.handle_event)
+
+  wait_for_stats(zkt, "fire_watches", lambda: stats.processed_events < 1)
+  cur_stats = stats.cur_stats
+
+  assert cur_stats["NodeChildrenChanged"]["/in/portland"] == 1
 
   stats.stop()

@@ -48,8 +48,13 @@ def test_endpoints():
   class Server(HttpServer):
     pass
 
+  def free_port():
+      s = socket.socket()
+      s.bind(('', 0))
+      return s.getsockname()[1]
+
   server_addr = "127.0.0.1"
-  server_port = 8080
+  server_port = free_port()
 
   bottle.ServerAdapter.quiet = True
 
@@ -83,7 +88,7 @@ def test_endpoints():
   else:
     raise Exception("server didn't come up")
 
-  conn = httplib.HTTPConnection("127.0.0.1:8080")
+  conn = httplib.HTTPConnection("127.0.0.1:%d" % server_port)
   conn.request("GET", "/json/info")
   resp = conn.getresponse()
   assert resp.status == 200

@@ -1,6 +1,21 @@
 ChangeLog
 =========
 
+0.1.5 (2015-06-XX)
+--------------------
+
+Bug Handling
+************
+-
+
+Features
+********
+-
+
+Breaking changes
+****************
+- zk-dump: rename --sort-by to --group-by
+
 0.1.4 (2015-06-17)
 --------------------
 

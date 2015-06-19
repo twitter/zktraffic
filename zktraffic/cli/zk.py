@@ -37,11 +37,16 @@ from twitter.common.log.options import LogOptions
 def setup():
   LogOptions.set_stderr_log_level('NONE')
 
-  app.add_option('--iface', default='eth0', type=str)
-  app.add_option('--client-port', default=0, type=int)
-  app.add_option('--zookeeper-port', default=2181, type=int)
-  app.add_option('--max-queued-requests', default=10000, type=int)
-  app.add_option('--unpaired', default=False, action='store_true', help='Don\'t pair reqs/reps')
+  app.add_option('--iface', default='eth0', type=str,
+                 help='The interface to sniff on')
+  app.add_option('--client-port', default=0, type=int,
+                 help='The client port to filter by')
+  app.add_option('--zookeeper-port', default=2181, type=int,
+                 help='The ZooKeeper server port to filter by')
+  app.add_option('--max-queued-requests', default=10000, type=int,
+                 help='The maximum number of requests queued to be deserialized')
+  app.add_option('--unpaired', default=False, action='store_true',
+                 help='Don\'t pair reqs/reps')
   app.add_option('--exclude-host',
                  dest='excluded_hosts',
                  metavar='HOST',
@@ -54,12 +59,15 @@ def setup():
                  default=[],
                  action='append',
                  help='Host that should be included (you can use this multiple times)')
-  app.add_option('-p', '--include-pings', default=False, action='store_true')
-  app.add_option('-c', '--colors', default=False, action='store_true')
-  app.add_option('--dump-bad-packet', default=False, action='store_true')
+  app.add_option('-p', '--include-pings', default=False, action='store_true',
+                 help='Whether to include ping requests and replies')
+  app.add_option('-c', '--colors', default=False, action='store_true',
+                 help='Color each client/server stream differently')
+  app.add_option('--dump-bad-packet', default=False, action='store_true',
+                 help='If unable to to deserialize a packet, print it out')
   app.add_option('--count-requests', default=0, type=int,
-                 help='Count N requests and report a sorted summary (default: sort by path)')
-  app.add_option('--sort-by', default='path', type=str,
+                 help='Count N requests and report a summary (default: group by path)')
+  app.add_option('--group-by', default='path', type=str,
                  help='Only makes sense with --count-requests. Possible values: path or type')
   app.add_option('--version', default=False, action='store_true')
 
@@ -188,9 +196,9 @@ class UnpairedPrinter(BasePrinter):
 
 class CountPrinter(BasePrinter):
   """ use to accumulate up to N requests and then print a summary """
-  def __init__(self, count, sort_by, loopback):
+  def __init__(self, count, group_by, loopback):
     super(CountPrinter, self).__init__(False, loopback)
-    self.count, self.sort_by = count, sort_by
+    self.count, self.group_by = count, group_by
     self.seen = 0
     self.requests = defaultdict(int)
 
@@ -219,7 +227,7 @@ class CountPrinter(BasePrinter):
 
     # eventually we should grab a lock here, but as of now
     # this is only called from a single thread.
-    key = msg.path if self.sort_by == "path" else msg.name
+    key = msg.path if self.group_by == "path" else msg.name
     self.requests[key] += 1
     self.seen += 1
 
@@ -282,11 +290,11 @@ def main(_, options):
   loopback = options.iface in ["lo", "lo0"]
 
   if options.count_requests > 0:
-    if options.sort_by not in ["path", "type"]:
-      sys.stderr.write("Unknown value for --sort-by, use 'path' or 'type'.\n")
+    if options.group_by not in ["path", "type"]:
+      sys.stderr.write("Unknown value for --group-by, use 'path' or 'type'.\n")
       sys.exit(1)
 
-    p = CountPrinter(options.count_requests, options.sort_by, loopback)
+    p = CountPrinter(options.count_requests, options.group_by, loopback)
   elif options.unpaired:
     p = UnpairedPrinter(options.colors, loopback)
   else:

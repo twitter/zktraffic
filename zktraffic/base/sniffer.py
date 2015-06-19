@@ -31,12 +31,12 @@ from .network import BadPacket, get_ip, get_ip_packet
 from .server_message import Reply, ServerMessage, WatchEvent
 from .zookeeper import DeserializationError, OpCodes
 
-from scapy.sendrecv import sniff
 from scapy.config import conf as scapy_conf
+scapy_conf.logLevel = logging.ERROR  # shush scapy
+
+from scapy.sendrecv import sniff
 from twitter.common import log
 
-
-scapy_conf.logLevel = logging.ERROR  # shush scapy
 
 DEFAULT_PORT = 2181
 
