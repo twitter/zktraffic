@@ -1,6 +1,17 @@
 ChangeLog
 =========
 
+0.1.6 (2015-06-XX)
+--------------------
+
+Bug Handling
+************
+-
+
+Features
+********
+- zk-dump: add support for profiling latencies by path/type
+
 0.1.5 (2015-06-22)
 --------------------
 
@@ -12,7 +23,7 @@ Bug Handling
 
 Features
 ********
-- zk-dump: add support for profiling latencies by path/type
+-
 
 Breaking changes
 ****************
