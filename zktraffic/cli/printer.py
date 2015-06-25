@@ -35,12 +35,12 @@ NUM_COLORS = len(colors.COLORS)
 
 class Printer(Thread):
   """ simple printer thread to use with FLE & ZAB messages """
-  def __init__(self, colors):
+  def __init__(self, colors, output=sys.stdout):
     super(Printer, self).__init__()
     self.setDaemon(True)
     self._queue = deque()
     self._print = self._print_color if colors else self._print_default
-
+    self._output = output
     self.start()
 
   def run(self):
@@ -53,14 +53,14 @@ class Printer(Thread):
         break
 
   def _print_default(self, msg):
-    sys.stdout.write(str(msg))
-    sys.stdout.flush()
+    self._output.write(str(msg))
+    self._output.flush()
 
   def _print_color(self, msg):
     attr = colors.COLORS[msg.src.__hash__() % NUM_COLORS]
     cfunc = getattr(colors, attr)
-    sys.stdout.write(cfunc(str(msg)))
-    sys.stdout.flush()
+    self._output.write(cfunc(str(msg)))
+    self._output.flush()
 
   def add(self, msg):
     self._queue.append(msg)
@@ -89,11 +89,11 @@ class Requests(object):
 class BasePrinter(Thread):
   """ base printer for client-side messages """
 
-  def __init__(self, colors, loopback):
+  def __init__(self, colors, loopback, output=sys.stdout):
     super(BasePrinter, self).__init__()
     self.write = self.colored_write if colors else self.simple_write
     self.loopback = loopback
-
+    self._output = output
     self.setDaemon(True)
 
   def run(self, *args, **kwargs):
@@ -112,13 +112,13 @@ class BasePrinter(Thread):
     c = colors.COLORS[msgs[0].client.__hash__() % NUM_COLORS]
     cfunc = getattr(colors, c)
     for i, m in enumerate(msgs):
-      sys.stdout.write(cfunc("%s%s %s" % (right_arrow(i), format_timestamp(m.timestamp), m)))
-    sys.stdout.flush()
+      self._output.write(cfunc("%s%s %s" % (right_arrow(i), format_timestamp(m.timestamp), m)))
+    self._output.flush()
 
   def simple_write(self, *msgs):
     for i, m in enumerate(msgs):
-      sys.stdout.write("%s%s %s" % (right_arrow(i), format_timestamp(m.timestamp), m))
-    sys.stdout.flush()
+      self._output.write("%s%s %s" % (right_arrow(i), format_timestamp(m.timestamp), m))
+    self._output.flush()
 
   def cancel(self, *args, **kwargs):
     """ will be called on KeyboardInterrupt """
@@ -126,8 +126,8 @@ class BasePrinter(Thread):
 
 
 class DefaultPrinter(BasePrinter):
-  def __init__(self, colors, loopback):
-    super(DefaultPrinter, self).__init__(colors, loopback)
+  def __init__(self, colors, loopback, output=sys.stdout):
+    super(DefaultPrinter, self).__init__(colors, loopback, output)
     self._requests_by_client = defaultdict(Requests)
     self._replies = deque()
 
@@ -136,7 +136,7 @@ class DefaultPrinter(BasePrinter):
       try:
         rep = self._replies.popleft()
       except IndexError:
-        time.sleep(0.01)
+        time.sleep(0.0001)
         continue
 
       reqs = self._requests_by_client[rep.client].pop(rep.xid)
@@ -166,8 +166,8 @@ class DefaultPrinter(BasePrinter):
 
 
 class UnpairedPrinter(BasePrinter):
-  def __init__(self, colors, loopback):
-    super(UnpairedPrinter, self).__init__(colors, loopback)
+  def __init__(self, colors, loopback, output=sys.stdout):
+    super(UnpairedPrinter, self).__init__(colors, loopback, output)
     self._messages = deque()
 
   def run(self):
@@ -209,8 +209,8 @@ def key_of(msg, group_by, depth):
 
 class CountPrinter(BasePrinter):
   """ use to accumulate up to N requests and then print a summary """
-  def __init__(self, count, group_by, loopback, aggregation_depth):
-    super(CountPrinter, self).__init__(False, loopback)
+  def __init__(self, count, group_by, loopback, aggregation_depth, output=sys.stdout):
+    super(CountPrinter, self).__init__(False, loopback, output)
     self.count, self.group_by, self.aggregation_depth = count, group_by, aggregation_depth
     self.seen = 0
     self.requests = defaultdict(int)
@@ -221,8 +221,8 @@ class CountPrinter(BasePrinter):
 
     results = sorted(self.requests.items(), key=lambda item: item[1], reverse=True)
     for res in results:
-       sys.stdout.write("%s %d\n" % res)
-    sys.stdout.flush()
+      self._output.write("%s %d\n" % res)
+    self._output.flush()
 
   def request_handler(self, req):
     self._add(req)
@@ -248,8 +248,8 @@ class CountPrinter(BasePrinter):
 
 class LatencyPrinter(BasePrinter):
   """ measures latencies between requests and replies """
-  def __init__(self, count, group_by, loopback, aggregation_depth, sort_by):
-    super(LatencyPrinter, self).__init__(False, loopback)
+  def __init__(self, count, group_by, loopback, aggregation_depth, sort_by, output=sys.stdout):
+    super(LatencyPrinter, self).__init__(False, loopback, output)
     self._count, self._group_by, self._aggregation_depth = count, group_by, aggregation_depth
     self._sort_by = sort_by
     self._seen = 0
@@ -283,8 +283,8 @@ class LatencyPrinter(BasePrinter):
       self._seen += 1
 
       # update status
-      sys.stdout.write("\rCollecting (%d/%d)" % (self._seen, self._count))
-      sys.stdout.flush()
+      self._output.write("\rCollecting (%d/%d)" % (self._seen, self._count))
+      self._output.flush()
 
   def report(self):
     """ calculate & display latencies """
@@ -297,7 +297,7 @@ class LatencyPrinter(BasePrinter):
     self._report_done = True
 
     # clear the line
-    sys.stdout.write("\r")
+    self._output.write("\r")
 
     results = {}
     for key, latencies in self._latencies_by_group.items():
@@ -314,8 +314,8 @@ class LatencyPrinter(BasePrinter):
     results = sorted(results.items(), key=lambda it: it[1][self._sort_by], reverse=True)
     data = [tuple([key, result["avg"], result["p95"], result["p99"]]) for key, result in results]
 
-    sys.stdout.write("%s\n" % tabulate(data, headers=headers))
-    sys.stdout.flush()
+    self._output.write("%s\n" % tabulate(data, headers=headers))
+    self._output.flush()
 
   def cancel(self):
     """ if we were interrupted, but haven't reported; do it now """
