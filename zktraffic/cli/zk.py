@@ -28,8 +28,11 @@ import zlib
 from zktraffic import __version__
 from zktraffic.base.sniffer import Sniffer, SnifferConfig
 from zktraffic.base.zookeeper import OpCodes
+from zktraffic.stats.util import percentile
 
 import colors
+
+from tabulate import tabulate
 from twitter.common import app
 from twitter.common.log.options import LogOptions
 
@@ -37,38 +40,44 @@ from twitter.common.log.options import LogOptions
 def setup():
   LogOptions.set_stderr_log_level('NONE')
 
-  app.add_option('--iface', default='eth0', type=str,
+  app.add_option('--iface', default='eth0', type=str, metavar='<iface>',
                  help='The interface to sniff on')
-  app.add_option('--client-port', default=0, type=int,
+  app.add_option('--client-port', default=0, type=int, metavar='<client_port>',
                  help='The client port to filter by')
-  app.add_option('--zookeeper-port', default=2181, type=int,
+  app.add_option('--zookeeper-port', default=2181, type=int, metavar='<server_port>',
                  help='The ZooKeeper server port to filter by')
-  app.add_option('--max-queued-requests', default=10000, type=int,
+  app.add_option('--max-queued-requests', default=10000, type=int, metavar='<max>',
                  help='The maximum number of requests queued to be deserialized')
-  app.add_option('--unpaired', default=False, action='store_true',
-                 help='Don\'t pair reqs/reps')
   app.add_option('--exclude-host',
                  dest='excluded_hosts',
-                 metavar='HOST',
+                 metavar='<host>',
                  default=[],
                  action='append',
                  help='Host that should be excluded (you can use this multiple times)')
   app.add_option('--include-host',
                  dest='included_hosts',
-                 metavar='HOST',
+                 metavar='<host>',
                  default=[],
                  action='append',
                  help='Host that should be included (you can use this multiple times)')
+  app.add_option('--count-requests', default=0, type=int, metavar='<nreqs>',
+                 help='Count N requests and report a summary (default: group by path)')
+  app.add_option('--measure-latency', default=0, type=int, metavar='<nreqs>',
+                 help='Measure latency of N pairs of requests and replies (default: group by path')
+  app.add_option('--group-by', default='path', type=str, metavar='<group>',
+                 help='Used with --count-requests or --measure-latency. Possible values: path or type')
+  app.add_option('--sort-by', default='avg', type=str, metavar='<sort>',
+                 help='Used with --measure-latency. Possible values: avg, p95 and p99')
+  app.add_option("--aggregation-depth", default=0, type=int, metavar='<depth>',
+                 help="Aggregate paths up to a certain depth. Used with --count-requests or --measure-latency")
+  app.add_option('--unpaired', default=False, action='store_true',
+                 help='Don\'t pair reqs/reps')
   app.add_option('-p', '--include-pings', default=False, action='store_true',
                  help='Whether to include ping requests and replies')
   app.add_option('-c', '--colors', default=False, action='store_true',
                  help='Color each client/server stream differently')
   app.add_option('--dump-bad-packet', default=False, action='store_true',
                  help='If unable to to deserialize a packet, print it out')
-  app.add_option('--count-requests', default=0, type=int,
-                 help='Count N requests and report a summary (default: group by path)')
-  app.add_option('--group-by', default='path', type=str,
-                 help='Only makes sense with --count-requests. Possible values: path or type')
   app.add_option('--version', default=False, action='store_true')
 
 
@@ -124,6 +133,10 @@ class BasePrinter(threading.Thread):
     for i, m in enumerate(msgs):
       sys.stdout.write("%s%s %s" % (right_arrow(i), format_timestamp(m.timestamp), m))
     sys.stdout.flush()
+
+  def cancel(self):
+    """ will be called on KeyboardInterrupt """
+    pass
 
 
 class DefaultPrinter(BasePrinter):
@@ -196,9 +209,9 @@ class UnpairedPrinter(BasePrinter):
 
 class CountPrinter(BasePrinter):
   """ use to accumulate up to N requests and then print a summary """
-  def __init__(self, count, group_by, loopback):
+  def __init__(self, count, group_by, loopback, aggregation_depth):
     super(CountPrinter, self).__init__(False, loopback)
-    self.count, self.group_by = count, group_by
+    self.count, self.group_by, self.aggregation_depth = count, group_by, aggregation_depth
     self.seen = 0
     self.requests = defaultdict(int)
 
@@ -227,9 +240,103 @@ class CountPrinter(BasePrinter):
 
     # eventually we should grab a lock here, but as of now
     # this is only called from a single thread.
-    key = msg.path if self.group_by == "path" else msg.name
+    if self.group_by == "path":
+      key = msg.path if self.aggregation_depth == 0 else msg.parent_path(self.aggregation_depth)
+    else:
+      key = msg.name
     self.requests[key] += 1
     self.seen += 1
+
+
+class LatencyPrinter(BasePrinter):
+  """ measures latencies between requests and replies """
+  def __init__(self, count, group_by, loopback, aggregation_depth, sort_by):
+    super(LatencyPrinter, self).__init__(False, loopback)
+    self._count, self._group_by, self._aggregation_depth = count, group_by, aggregation_depth
+    self._sort_by = sort_by
+    self._seen = 0
+    self._latencies_by_group = defaultdict(list)
+    self._requests_by_client = defaultdict(Requests)
+    self._replies = deque()
+    self._report_done = False
+
+  def run(self):
+    self.wait_for_requests()
+    self.report()
+
+  def wait_for_requests(self):
+    """ spin until we've collected all requests """
+    while self._seen < self._count:
+      try:
+        rep = self._replies.popleft()
+      except IndexError:
+        time.sleep(0.001)
+        continue
+
+      reqs = self._requests_by_client[rep.client].pop(rep.xid)
+      if not reqs:
+        continue
+
+      req = reqs[0]
+      if self._group_by == "path":
+        key = req.path if self._aggregation_depth == 0 else req.parent_path(self._aggregation_depth)
+      else:
+        key = req.name
+      latency = rep.timestamp - req.timestamp
+      self._latencies_by_group[key].append(latency)
+      self._seen += 1
+
+      # update status
+      sys.stdout.write("\rCollecting (%d/%d)" % (self._seen, self._count))
+      sys.stdout.flush()
+
+  def report(self):
+    """ calculate & display latencies """
+
+    # TODO: this should be protected by a lock
+    if self._report_done:
+      return
+    if self._seen < self._count:  # force wait_for_requests to finish
+      self._seen = self._count
+    self._report_done = True
+
+    # clear the line
+    sys.stdout.write("\r")
+
+    results = {}
+    for key, latencies in self._latencies_by_group.items():
+      result = {}
+      result["avg"] = sum(latencies) / len(latencies)
+      latencies = sorted(latencies)
+      result["p95"] = percentile(latencies, 0.95)
+      result["p99"] = percentile(latencies, 0.99)
+      results[key] = result
+
+    headers = [self._group_by, "avg", "p95", "p99"]
+    data = []
+
+    # sort by avg latency
+    for key, result in sorted(results.items(), key=lambda it: it[1][self._sort_by], reverse=True):
+      data.append(tuple([key, result["avg"], result["p95"], result["p99"]]))
+
+    sys.stdout.write("%s\n" % tabulate(data, headers=headers))
+    sys.stdout.flush()
+
+  def cancel(self):
+    """ if we were interrupted, but haven't reported; do it now """
+    self.report()
+
+  def request_handler(self, req):
+    # close requests don't have a reply, so ignore
+    if req.opcode != OpCodes.CLOSE:
+      self._requests_by_client[req.client].add(req)
+
+  def reply_handler(self, rep):
+    self._replies.append(rep)
+
+  def event_handler(self, evt):
+    """ events are asynchronously generated by the server, so we can't measure latency """
+    pass
 
 
 def expand_hosts(hosts):
@@ -257,6 +364,24 @@ def get_ips(host, port=0):
         sys.stderr.write("Skipping host: no IPv6s for %s\n" % host)
 
   return ips
+
+
+def validate_group_by(group_by):
+  if group_by not in ["path", "type"]:
+    sys.stderr.write("Unknown value for --group-by, use 'path' or 'type'.\n")
+    sys.exit(1)
+
+
+def validate_aggregation_depth(depth):
+  if depth < 0:
+    sys.stderr.write("Aggregation depth must be >= 0.\n")
+    sys.exit(1)
+
+
+def validate_sort_by(sort_by):
+  if sort_by not in ["avg", "p95", "p99"]:
+    sys.stderr.write("Unknown value for --sort-by, possible values are 'avg', 'p95' and 'p99'.\n")
+    sys.exit(1)
 
 
 def main(_, options):
@@ -289,12 +414,21 @@ def main(_, options):
 
   loopback = options.iface in ["lo", "lo0"]
 
-  if options.count_requests > 0:
-    if options.group_by not in ["path", "type"]:
-      sys.stderr.write("Unknown value for --group-by, use 'path' or 'type'.\n")
-      sys.exit(1)
+  if options.count_requests > 0 and options.measure_latency > 0:
+    sys.stderr.write("The flags --count-requests and --measure-latency can't be mixed.\n")
+    sys.exit(1)
 
-    p = CountPrinter(options.count_requests, options.group_by, loopback)
+  if options.count_requests > 0:
+    validate_group_by(options.group_by)
+    validate_aggregation_depth(options.aggregation_depth)
+    p = CountPrinter(options.count_requests, options.group_by, loopback, options.aggregation_depth)
+  elif options.measure_latency > 0:
+    validate_group_by(options.group_by)
+    validate_aggregation_depth(options.aggregation_depth)
+    validate_sort_by(options.sort_by)
+    p = LatencyPrinter(
+      options.measure_latency, options.group_by, loopback, options.aggregation_depth,
+      options.sort_by)
   elif options.unpaired:
     p = UnpairedPrinter(options.colors, loopback)
   else:
@@ -314,7 +448,7 @@ def main(_, options):
     while p.isAlive():
       time.sleep(0.5)
   except (KeyboardInterrupt, SystemExit):
-    pass
+    p.cancel()
 
   # shutdown sniffer
   sniffer.stop()

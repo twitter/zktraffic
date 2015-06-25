@@ -12,7 +12,7 @@ Bug Handling
 
 Features
 ********
--
+- zk-dump: add support for profiling latencies by path/type
 
 Breaking changes
 ****************
