@@ -65,7 +65,7 @@ def setup():
   app.add_option('--measure-latency', default=0, type=int, metavar='<nreqs>',
                  help='Measure latency of N pairs of requests and replies (default: group by path')
   app.add_option('--group-by', default='path', type=str, metavar='<group>',
-                 help='Used with --count-requests or --measure-latency. Possible values: path or type')
+                 help='Used with --count-requests or --measure-latency. Possible values: path, type or client')
   app.add_option('--sort-by', default='avg', type=str, metavar='<sort>',
                  help='Used with --measure-latency. Possible values: avg, p95 and p99')
   app.add_option("--aggregation-depth", default=0, type=int, metavar='<depth>',
@@ -207,6 +207,20 @@ class UnpairedPrinter(BasePrinter):
     self._messages.append(evt)
 
 
+def key_of(msg, group_by, depth):
+  """ get the msg's attribute to be used as key for grouping """
+  if group_by == "path":
+    key = msg.path if depth == 0 else msg.parent_path(depth)
+  elif group_by == "type":
+    key = msg.name
+  elif group_by == "client":
+    key = msg.client
+  else:
+    raise ValueError("Unknown group: %s" % group_by)
+
+  return key
+
+
 class CountPrinter(BasePrinter):
   """ use to accumulate up to N requests and then print a summary """
   def __init__(self, count, group_by, loopback, aggregation_depth):
@@ -238,12 +252,10 @@ class CountPrinter(BasePrinter):
     if self.seen >= self.count:
       return
 
+    key = key_of(msg, self.group_by, self.aggregation_depth)
+
     # eventually we should grab a lock here, but as of now
     # this is only called from a single thread.
-    if self.group_by == "path":
-      key = msg.path if self.aggregation_depth == 0 else msg.parent_path(self.aggregation_depth)
-    else:
-      key = msg.name
     self.requests[key] += 1
     self.seen += 1
 
@@ -278,11 +290,9 @@ class LatencyPrinter(BasePrinter):
         continue
 
       req = reqs[0]
-      if self._group_by == "path":
-        key = req.path if self._aggregation_depth == 0 else req.parent_path(self._aggregation_depth)
-      else:
-        key = req.name
+      key = key_of(req, self._group_by, self._aggregation_depth)
       latency = rep.timestamp - req.timestamp
+
       self._latencies_by_group[key].append(latency)
       self._seen += 1
 
@@ -367,8 +377,8 @@ def get_ips(host, port=0):
 
 
 def validate_group_by(group_by):
-  if group_by not in ["path", "type"]:
-    sys.stderr.write("Unknown value for --group-by, use 'path' or 'type'.\n")
+  if group_by not in ["path", "type", "client"]:
+    sys.stderr.write("Unknown value for --group-by, use 'path', 'type' or 'client'.\n")
     sys.exit(1)
 
 
