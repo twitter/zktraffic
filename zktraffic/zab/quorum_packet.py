@@ -18,7 +18,7 @@ from datetime import datetime
 
 from zktraffic.base.network import BadPacket
 from zktraffic.base.util import read_long, read_number
-from zktraffic.base.zookeeper import OpCodes, ZK_REQUEST_TYPES
+from zktraffic.base.zookeeper import ZK_REQUEST_TYPES
 
 
 class PacketType(object):
@@ -133,31 +133,37 @@ class QuorumPacket(QuorumPacketBase("QuorumPacketBase", (object,), {})):
     return handler.with_params(timestamp, src, dst, ptype, zxid, data, offset)
 
   def __str__(self):
-    def gen():
-      for k in dir(self):
-        v = getattr(self, k)
-        cond = (isinstance(v, int) or isinstance(v, basestring)) and \
-               not k.isupper() and not k.startswith("_") and not "_literal" in k \
-               and not k == "type"
-        if cond:
-          alt_k = "%s_literal" % k
-          if hasattr(self, alt_k):
-            v = getattr(self, alt_k)
-          yield k, v
+    def attributes():
+      def valid(key, value):
+        if not isinstance(value, int) and not isinstance(value, basestring):
+          return False
+
+        if key.isupper() or key.startswith("_") or "_literal" in key or key == "type":
+          return False
+
+        return True
+
+      for key in dir(self):
+        value = getattr(self, key)
+        if valid(key, value):
+          alt_key = "%s_literal" % key
+          if hasattr(self, alt_key):
+            value = getattr(self, alt_key)
+          yield key, value
           
-    s = "%s(\n" % self.__class__.__name__
-    for k, v in gen():
-        s += " %s=%s,\n" % (k, v)
-    s += ")\n"
-    return s
+    parts = ["%s(" % self.__class__.__name__]
+    for name, value in attributes():
+        parts.append(" %s=%s," % (name, value))
+    parts.append(")")
+
+    return "\n".join(parts)
 
 
 class Request(QuorumPacket):
   PTYPE = PacketType.REQUEST
   __slots__ = ("session_id", "cxid", "req_type")
   
-  def __init__(self, timestamp, src, dst, ptype, zxid, length,
-               session_id, cxid, req_type):
+  def __init__(self, timestamp, src, dst, ptype, zxid, length, session_id, cxid, req_type):
     super(Request, self).__init__(timestamp, src, dst, ptype, zxid, length)
     self.session_id = session_id
     self.cxid = cxid
@@ -167,30 +173,39 @@ class Request(QuorumPacket):
   def req_type_literal(self):
     return ZK_REQUEST_TYPES[self.req_type] if self.req_type in ZK_REQUEST_TYPES else str(self.req_type)
 
+  @property
+  def session_id_literal(self):
+    return "0x%x" % self.session_id
+
   @classmethod
   def with_params(cls, timestamp, src, dst, ptype, zxid, data, offset):
     data_len, offset = read_number(data, offset)
     session_id, offset = read_long(data, offset)
     cxid, offset = read_number(data, offset)
     req_type, offset = read_number(data, offset)
-    # TODO: dissect the remaining data
-    # see server_message.py and client_message.py
-    return cls(timestamp, src, dst, ptype, zxid, len(data),
-               session_id, cxid, req_type)
+
+    # TODO: dissect the remaining data, see server_message.py and client_message.py
+
+    # Note: zxid=-1 because requests don't have a zxid
+    return cls(timestamp, src, dst, ptype, -1, len(data), session_id, cxid, req_type)
 
 
 class Proposal(QuorumPacket):
   PTYPE = PacketType.PROPOSAL
-  __slots__ = ("client_id", "cxid", "txn_zxid", "txn_time", "txn_type")
+  __slots__ = ("session_id", "cxid", "txn_zxid", "txn_time", "txn_type")
 
   def __init__(self, timestamp, src, dst, ptype, zxid, length,
-               client_id, cxid, txn_zxid, txn_time, txn_type):
+               session_id, cxid, txn_zxid, txn_time, txn_type):
     super(Proposal, self).__init__(timestamp, src, dst, ptype, zxid, length)
-    self.client_id = client_id
+    self.session_id = session_id
     self.cxid = cxid
     self.txn_zxid = txn_zxid
     self.txn_time = txn_time
     self.txn_type = txn_type
+
+  @property
+  def session_id_literal(self):
+    return "0x%x" % self.session_id
 
   @property
   def txn_type_literal(self):
@@ -199,7 +214,7 @@ class Proposal(QuorumPacket):
   @classmethod
   def with_params(cls, timestamp, src, dst, ptype, zxid, data, offset):
     data_len, offset = read_number(data, offset)
-    client_id, offset = read_long(data, offset)
+    session_id, offset = read_long(data, offset)
     cxid, offset = read_number(data, offset)
     txn_zxid, offset = read_long(data, offset)
     txn_time, offset = read_long(data, offset)
@@ -207,7 +222,7 @@ class Proposal(QuorumPacket):
     # TODO: dissect the remaining data
     # see org.apache.zookeeper.server.util.SerializeUtils.deserializeTxn()
     return cls(timestamp, src, dst, ptype, zxid, len(data),
-               client_id, cxid, txn_zxid, txn_time, txn_type)
+               session_id, cxid, txn_zxid, txn_time, txn_type)
 
 
 class Ack(QuorumPacket):
@@ -226,19 +241,21 @@ class Ping(QuorumPacket):
 class Revalidate(QuorumPacket):
   PTYPE = PacketType.REVALIDATE
   __slots__ = ("session_id", "timeout")
-  def __init__(self, timestamp, src, dst, ptype, zxid, length,
-               session_id, timeout):
+  def __init__(self, timestamp, src, dst, ptype, zxid, length, session_id, timeout):
     super(Revalidate, self).__init__(timestamp, src, dst, ptype, zxid, length)
     self.session_id = session_id
     self.timeout = timeout
+
+  @property
+  def session_id_literal(self):
+    return "0x%x" % self.session_id
 
   @classmethod
   def with_params(cls, timestamp, src, dst, ptype, zxid, data, offset):
     data_len, offset = read_number(data, offset)
     session_id, offset = read_long(data, offset)
     timeout, offset = read_number(data, offset)
-    return cls(timestamp, src, dst, ptype, zxid, len(data),
-               session_id, timeout)
+    return cls(timestamp, src, dst, ptype, zxid, len(data), session_id, timeout)
 
 
 class Sync(QuorumPacket):
@@ -339,28 +356,32 @@ class AckEpoch(QuorumPacket):
 
 
 class InformAndActivate(Proposal):
-  __slots__ = ("client_id", "cxid", "txn_zxid", "txn_time", "txn_type", "suggested_leader_id")
+  __slots__ = ("session_id", "cxid", "txn_zxid", "txn_time", "txn_type", "suggested_leader_id")
   PTYPE = PacketType.INFORMANDACTIVATE
   def __init__(self, timestamp, src, dst, ptype, zxid, length,
                suggested_leader_id,
-               client_id, cxid, txn_zxid, txn_time, txn_type):
+               session_id, cxid, txn_zxid, txn_time, txn_type):
     super(Proposal, self).__init__(timestamp, src, dst, ptype, zxid, length)
     self.suggested_leader_id = suggested_leader_id
-    self.client_id = client_id
+    self.session_id = session_id
     self.cxid = cxid
     self.txn_zxid = txn_zxid
     self.txn_time = txn_time
     self.txn_type = txn_type
 
+  @property
+  def session_id_literal(self):
+    return "0x%x" % self.session_id
+
   @classmethod
   def with_params(cls, timestamp, src, dst, ptype, zxid, data, offset):
     data_len, offset = read_number(data, offset)
     suggested_leader_id, offset = read_long(data, offset)
-    client_id, offset = read_long(data, offset)
+    session_id, offset = read_long(data, offset)
     cxid, offset = read_number(data, offset)
     txn_zxid, offset = read_long(data, offset)
     txn_time, offset = read_long(data, offset)
     txn_type, offset = read_number(data, offset)
     return cls(timestamp, src, dst, ptype, zxid, len(data),
                suggested_leader_id,
-               client_id, cxid, txn_zxid, txn_time, txn_type)
+               session_id, cxid, txn_zxid, txn_time, txn_type)
