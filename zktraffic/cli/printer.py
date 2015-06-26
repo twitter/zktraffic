@@ -41,16 +41,33 @@ class Printer(Thread):
     self._queue = deque()
     self._print = self._print_color if colors else self._print_default
     self._output = output
+    self._stopped = True
+    self._wants_stopped = False
     self.start()
 
+  @property
+  def stopped(self):
+    return self._stopped
+
+  def stop(self):
+    self._wants_stopped = True
+
+  @property
+  def empty(self):
+    return len(self._queue) == 0
+
   def run(self):
-    while True:
+    self._stopped = False
+
+    while not self._wants_stopped:
       try:
         self._print(self._queue.popleft())
       except IndexError:
         time.sleep(0.1)
       except IOError:  # PIPE broken, most likely
         break
+
+    self._stopped = True
 
   def _print_default(self, msg):
     self._output.write(str(msg))
