@@ -69,6 +69,17 @@ GetChildrenRequest      0.000182547  0.000453258  0.00220628
 ExistsRequest           0.000162728  0.000430155  0.000862937
 ```
 
+Or by client:
+
+```
+$ sudo ZKTRAFFIC_SOURCE=1 bin/zk-dump --measure-latency 1000 --group-by client --sort-by p99
+client                          avg          p95          p99
+----------------------  -----------  -----------  -----------
+10.0.1.3:44308          0.000735009  0.000978041  0.0032404
+10.0.1.6:34305          0.000182547  0.000453258  0.00220628
+10.0.1.9:36110          0.000162728  0.000430155  0.000862937
+```
+
 Or use the stats gathering daemon:
 
 ```

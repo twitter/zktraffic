@@ -10,7 +10,7 @@ Bug Handling
 
 Features
 ********
-- zk-dump: add support for profiling latencies by path/type
+- zk-dump: add support for profiling latencies by path/type/client
 
 0.1.5 (2015-06-22)
 --------------------
