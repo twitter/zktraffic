@@ -103,14 +103,14 @@ class SnifferConfig(object):
 iface = %s
 writes_only = %s
 filter = %s
-port = %d
+zookeeper_port = %d
 is_loopback = %s
 read_timeout_ms = %d
 debug = %s
 """ % (self.iface,
           str((self.writes_only)).lower(),
           self.filter,
-          self.port,
+          self.zookeeper_port,
           str(self.is_loopback),
           self.read_timeout_ms,
           str(self.debug).lower())

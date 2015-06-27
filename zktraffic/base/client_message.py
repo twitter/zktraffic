@@ -144,12 +144,6 @@ class ClientMessage(ClientMessageType('ClientMessageType', (object,), {})):
     """ client is ipaddr:port (maybe IPv6) """
     return self.client.rsplit(":", 1)[0]
 
-  @property
-  def port(self):
-    """ client is ipaddr:port (maybe IPv6) """
-    p = self.client.rfind(":")
-    return self.client[p + 1:]
-
   def parent_path(self, level):
     return parent_path(self.path, level)
 
@@ -260,8 +254,7 @@ class SetAuthRequest(Request):
     try:
       scheme, offset = read_string(data, offset)
       credential, offset = read_string(data, offset)
-    except StringTooLong:
-      pass
+    except StringTooLong: pass
 
     return cls(auth_type, intern(scheme), intern(credential), size, client, server)
 
@@ -346,24 +339,24 @@ class Create2Request(CreateRequest):
 class ReconfigRequest(Request):
   OPCODE = OpCodes.RECONFIG
 
-  def __init__(self, size, xid, client, server, joiningServers, leavingServers, newMembers):
+  def __init__(self, size, xid, client, server, joining, leaving, new_members):
     super(ReconfigRequest, self).__init__(size, xid, "", client, False, server)
-    self.joiningServers = joiningServers
-    self.leavingServers = leavingServers
-    self.newMembers = newMembers
+    self.joining = joining
+    self.leaving = leaving
+    self.new_members = new_members
 
   @classmethod
   def with_params(cls, xid, path, watch, data, offset, size, client, server):
-    joiningServers, offset = read_string(data, offset)
-    offset = offset + 4 if joiningServers == "" else offset
-    leavingServers, offset = read_string(data, offset)
-    offset = offset + 4 if leavingServers == "" else offset
-    newMembers, offset = read_string(data, offset)
-    return cls(size, xid, client, server, joiningServers, leavingServers, newMembers)
+    joining, offset = read_string(data, offset)
+    offset = offset + 4 if joining == "" else offset
+    leaving, offset = read_string(data, offset)
+    offset = offset + 4 if leaving == "" else offset
+    new_members, offset = read_string(data, offset)
+    return cls(size, xid, client, server, joining, leaving, new_members)
 
   def __str__(self):
-    return "%s(xid=%d, joiningServers=%s, leavingServers=%s, newMembers=%s)\n" % (
-      self.name, self.xid, self.joiningServers, self.leavingServers, self.newMembers)
+    return "%s(xid=%d, joining=%s, leaving=%s, new_members=%s)\n" % (
+      self.name, self.xid, self.joining, self.leaving, self.new_members)
 
 
 class DeleteRequest(Request):
