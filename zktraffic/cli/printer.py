@@ -296,12 +296,12 @@ class CountPrinter(BasePrinter):
     while self.seen < self.count:
       time.sleep(0.001)
 
-    self._stopped = True
-
     results = sorted(self.requests.items(), key=lambda item: item[1], reverse=True)
     for res in results:
       self._output.write("%s %d\n" % res)
     self._output.flush()
+
+    self._stopped = True
 
   def request_handler(self, req):
     self._add(req)
