@@ -329,11 +329,14 @@ class CountPrinter(BasePrinter):
 
 class LatencyPrinter(BasePrinter):
   """ measures latencies between requests and replies """
-  def __init__(self, count, group_by, loopback, aggregation_depth, sort_by, output=sys.stdout):
+  def __init__(self, count, group_by, loopback, aggregation_depth, sort_by, output=sys.stdout, include_pings=True):
     super(LatencyPrinter, self).__init__(False, loopback, output)
     self._count, self._group_by, self._aggregation_depth = count, group_by, aggregation_depth
     self._sort_by = sort_by
     self._seen = 0
+    # FIXME: accounting pings is broken because their uniqueness is based on timestamps,
+    #        so we disable them for tests.
+    self._include_pings = include_pings
     self._latencies_by_group = defaultdict(list)
     self._requests_by_client = defaultdict(Requests)
     self._replies = deque()
@@ -354,6 +357,7 @@ class LatencyPrinter(BasePrinter):
         time.sleep(0.001)
         continue
 
+      # FIXME: this drops extra pings
       reqs = self._requests_by_client[rep.client].pop(rep.xid)
       if not reqs:
         continue
@@ -405,13 +409,19 @@ class LatencyPrinter(BasePrinter):
     self.report()
 
   def request_handler(self, req):
-    # close requests don't have a reply, so ignore
-    if not req.is_close:
-      self._requests_by_client[req.client].add(req)
+    if req.is_close:  # close requests don't have a reply, so ignore
+      return
 
+    if not self._include_pings and req.is_ping:
+      return
+
+    self._requests_by_client[req.client].add(req)
     self._seen_requests += 1
 
   def reply_handler(self, rep):
+    if not self._include_pings and rep.is_ping:
+      return
+
     self._replies.append(rep)
     self._seen_replies += 1
 
