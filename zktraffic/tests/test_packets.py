@@ -15,7 +15,7 @@
 # ==================================================================================================
 
 
-from zktraffic.base.zookeeper import OpCodes
+from zktraffic.base.client_message import SetWatchesRequest
 from zktraffic.stats.accumulators import PerPathStatsAccumulator
 from zktraffic.base.sniffer import Sniffer, SnifferConfig
 
@@ -100,3 +100,25 @@ def test_reconfig():
   consume_packets('reconfig', sniffer)
 
   assert stats._cur_stats["ReconfigRequest"][""] == 1
+
+def test_setwatches():
+  requests = []
+
+  def handler(request):
+    if isinstance(request, SetWatchesRequest):
+      requests.append(request)
+
+  sniffer = Sniffer(SnifferConfig())
+  sniffer.add_request_handler(handler)
+  consume_packets('setwatches', sniffer)
+
+  assert len(requests) == 1
+
+  req = requests[0]
+
+  assert len(req.child) == 5
+  assert "/foo" in req.child
+  assert "/in" in req.child
+  assert "/zookeeper" in req.child
+  assert "/in/portland" in req.child
+  assert "/" in req.child
