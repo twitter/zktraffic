@@ -81,6 +81,10 @@ class ServerMessage(ServerMessageType('ClientMessageType', (object,), {})):
   def opcode(self):
     return self.OPCODE
 
+  @property
+  def is_ping(self):
+    return self.xid == PING_XID
+
   @classmethod
   def with_params(cls, xid, zxid, error, data, offset, client, server):
     """Build a ServerMessage (a reply or event) with the given params, possibly parsing some more.

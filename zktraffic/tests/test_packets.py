@@ -16,81 +16,87 @@
 
 
 from zktraffic.base.zookeeper import OpCodes
-from zktraffic.stats.accumulated_stats import AccumulatedStats, StatsConfig
+from zktraffic.stats.accumulators import PerPathStatsAccumulator
 from zktraffic.base.sniffer import Sniffer, SnifferConfig
 
 from .common import consume_packets
 
 
-def default_zkt():
-  stats = AccumulatedStats(StatsConfig())
-  zkt = Sniffer(SnifferConfig())
-  zkt.add_request_handler(stats.handle_request)
-  return (zkt, stats)
+def default_sniffer(aggregation_depth=1):
+  stats = PerPathStatsAccumulator(aggregation_depth=aggregation_depth)
+  sniffer = Sniffer(SnifferConfig())
+  sniffer.add_request_handler(stats.update_request_stats)
+  return (sniffer, stats)
 
 
 # TODO(rgs): assert amount of bytes in writes/reads/ops
 def test_packets_set_data():
-  zkt, stats = default_zkt()
+  sniffer, stats = default_sniffer(aggregation_depth=2)
 
-  consume_packets('set_data', zkt)
+  consume_packets('set_data', sniffer)
 
-  assert stats.global_stats.ops_written == 20
-  assert stats.global_stats.by_op_counters[OpCodes.SETDATA] == 20
+  assert stats._cur_stats["total"]["/writes"] == 20
+  assert stats._cur_stats["total"]["/reads"] == 16
 
   # Now check that each path has the right stats...
   for i in range(0, 5):
-    assert stats.by_path["/load-testing/%d" % (i)].ops_written == 4
-    assert stats.by_path["/load-testing/%d" % (i)].by_op_counters[OpCodes.SETDATA] == 4
+    assert stats._cur_stats["SetDataRequest"]["/load-testing/%d" % i] == 4
 
 
 def test_packets_create_delete():
-  zkt, stats = default_zkt()
+  sniffer, stats = default_sniffer(aggregation_depth=2)
 
-  consume_packets('create', zkt)
+  consume_packets('create', sniffer)
 
-  assert stats.global_stats.ops_written == 45
-  assert stats.global_stats.by_op_counters[OpCodes.DELETE] == 20
-  assert stats.global_stats.by_op_counters[OpCodes.CREATE] == 25
+  assert stats._cur_stats["total"]["/writes"] == 45
 
   # Now check that each path has the right stats...
   for i in range(0, 5):
-    assert stats.by_path["/load-testing/%d" % (i)].ops_written == 9
-    assert stats.by_path["/load-testing/%d" % (i)].by_op_counters[OpCodes.DELETE] == 4
-    assert stats.by_path["/load-testing/%d" % (i)].by_op_counters[OpCodes.CREATE] == 5
+    assert stats._cur_stats["DeleteRequest"]["/load-testing/%d" % i] == 4
+    assert stats._cur_stats["CreateRequest"]["/load-testing/%d" % i] == 5
 
 
 # py-zookeeper (so the C library) doesn't add the request length when issuing Creates so lets
 # exercise that special parsing case
 def test_create_znode_pyzookeeper():
-  zkt, stats = default_zkt()
-  consume_packets('create-pyzookeeper', zkt)
-
-  assert stats.by_path["/git/twitter-config_sha"].ops_written == 1
-  assert stats.by_path["/git/twitter-config_sha"].by_op_counters[OpCodes.CREATE] == 1
-  assert stats.by_path["/git/twitter-config_sha"].bytes_written == 60
+  sniffer, stats = default_sniffer(aggregation_depth=2)
+  consume_packets('create-pyzookeeper', sniffer)
+  assert stats._cur_stats["CreateRequest"]["/git/twitter-config_sha"] == 1
 
 
 def test_watches():
-  zkt, stats = default_zkt()
-  consume_packets('getdata_watches', zkt)
+  sniffer, stats = default_sniffer()
+  consume_packets('getdata_watches', sniffer)
 
-  assert stats.global_stats.by_op_counters[OpCodes.GETDATA] == 2
-  assert stats.global_stats.by_op_counters[OpCodes.GETCHILDREN] == 2
-  assert stats.global_stats.watches == 2
+  assert stats._cur_stats["GetDataRequest"]["/test"] == 2
+  assert stats._cur_stats["GetChildrenRequest"]["/test"] == 2
+  assert stats._cur_stats["watches"]["/test"] == 2
 
 
 def test_connects():
-  zkt, stats = default_zkt()
-  consume_packets('connects', zkt)
+  sniffer, stats = default_sniffer()
+  consume_packets('connects', sniffer)
 
-  assert stats.global_stats.by_op_counters[OpCodes.CONNECT] == 3
-  assert stats.global_stats.by_op_counters[OpCodes.CLOSE] == 3
+  assert stats._cur_stats["ConnectRequest"][""] == 3
+  assert stats._cur_stats["CloseRequest"][""] == 3
 
 
 def test_multi():
-  zkt, stats = default_zkt()
-  consume_packets('multi', zkt)
+  sniffer, stats = default_sniffer(aggregation_depth=1)
+  consume_packets('multi', sniffer)
 
-  assert stats.global_stats.by_op_counters[OpCodes.MULTI] == 1
-  assert stats.by_path["/foo"].ops_written == 1
+  assert stats._cur_stats["MultiRequest"]["/foo"] == 1
+
+
+def test_auth():
+  sniffer, stats = default_sniffer()
+  consume_packets('auth', sniffer)
+
+  assert stats._cur_stats["SetAuthRequest"]["/tacos:tacos"] == 1
+
+
+def test_reconfig():
+  sniffer, stats = default_sniffer()
+  consume_packets('reconfig', sniffer)
+
+  assert stats._cur_stats["ReconfigRequest"][""] == 1

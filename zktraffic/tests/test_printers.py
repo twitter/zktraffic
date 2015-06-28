@@ -87,7 +87,12 @@ def test_count_printer():
   output = StringIO()
 
   printer = CountPrinter(
-    count=10, group_by='type', loopback=True, aggregation_depth=0, output=output)
+    count=14,             # requests + events, replies are not counted
+    group_by='type',
+    loopback=True,
+    aggregation_depth=0,
+    output=output
+  )
   printer.start()
 
   sniffer = get_sniffer(printer)
@@ -96,18 +101,27 @@ def test_count_printer():
   while not printer.stopped:
     time.sleep(0.001)
 
-  assert "ExistsRequest 4" in output.getvalue()
+  assert "ExistsRequest 5" in output.getvalue()
   assert "PingRequest 3" in output.getvalue()
+  assert "GetChildrenRequest 2" in output.getvalue()
   assert "GetDataRequest 1" in output.getvalue()
   assert "CreateRequest 1" in output.getvalue()
-  assert "GetChildrenRequest 1" in output.getvalue()
+  assert "NodeDataChanged 1" in output.getvalue()
+  assert "SetDataRequest 1" in output.getvalue()
 
 
 def test_latency_printer():
   output = StringIO()
 
   printer = LatencyPrinter(
-    count=10, group_by='type', loopback=True, aggregation_depth=0, sort_by='avg', output=output)
+    count=10,             # 5*exists + 1*get_data + 1*create + 2*get_children + 1*set_data
+    group_by='type',
+    loopback=True,
+    aggregation_depth=0,
+    sort_by='avg',
+    output=output,
+    include_pings=False  # accounting for pings has ordering issues, so ignore
+  )
   printer.start()
 
   sniffer = get_sniffer(printer)
@@ -120,5 +134,5 @@ def test_latency_printer():
   assert "GetDataRequest" in output.getvalue()
   assert "CreateRequest" in output.getvalue()
   assert "ExistsRequest" in output.getvalue()
-  assert "PingRequest" in output.getvalue()
   assert "GetChildrenRequest" in output.getvalue()
+  assert "SetDataRequest" in output.getvalue()

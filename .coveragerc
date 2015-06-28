@@ -2,3 +2,9 @@
 omit =
     */python?.?/*
     */site-packages/nose/*
+    zktraffic/cli/zk.py
+exclude_lines =
+    raise ValueError
+    raise DeserializationError
+    def __str__
+    except StringTooLong
