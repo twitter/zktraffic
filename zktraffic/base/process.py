@@ -97,22 +97,22 @@ class PsUtilProcessOptions(object):
 
 
 class DummyProcessOptions(object):
-  def set_cpu_affinity(self, _):
+  def set_cpu_affinity(self, _):  # pragma: no cover
     pass
 
   @property
-  def cpu_affinity(self):
+  def cpu_affinity(self):  # pragma: no cover
     pass
 
-  def set_niceness(self, _):
+  def set_niceness(self, _):  # pragma: no cover
     pass
 
   @property
-  def niceness(self):
+  def niceness(self):  # pragma: no cover
     return 0
 
   @property
-  def uptime(self):
+  def uptime(self):  # pragma: no cover
     if os.path.exists("/proc/self"):
       try:
         return int(time.time() - os.stat("/proc/self").st_ctime)
@@ -122,7 +122,7 @@ class DummyProcessOptions(object):
     return 0
 
   @staticmethod
-  def parse_cpu_affinity(_):
+  def parse_cpu_affinity(_):  # pragma: no cover
     return []
 
 

@@ -99,7 +99,7 @@ def req_type_to_str(request_type):
   if request_type in ZK_REQUEST_TYPES:
     return ZK_REQUEST_TYPES[request_type]
 
-  return "Unknown (%s)" % (request_type)
+  return "Unknown (%s)" % (request_type)  # pragma: no cover
 
 
 def can_set_watch(opcode):
@@ -122,7 +122,7 @@ def read_path(data, offset):
     path, offset = read_string(data, offset)
   except StringTooLong as ex:
     raise DeserializationError(str(ex))
-  if not path.startswith('/'):
+  if not path.startswith('/'):  # pragma: no cover
     log.debug("Bad path in request: %s", path)
     raise DeserializationError("Invalid path: %s" % (path))
   return (path, offset)
@@ -130,7 +130,7 @@ def read_path(data, offset):
 
 def read_opcode(data, offset):
   opcode, offset = read_number(data, offset)
-  if opcode not in ZK_REQUEST_TYPES:
+  if opcode not in ZK_REQUEST_TYPES:  # pragma: no cover
     log.debug("Bad request type: %s", opcode)
     raise DeserializationError("Invalid request type: %d" % (opcode))
   return (opcode, offset)

@@ -153,3 +153,5 @@ def _test_requests_replies(pcap_name, request_cls, reply_cls, nreqs, nreps):
 
   assert len(requests) == nreqs
   assert len(replies) == nreps
+
+  sniffer.stop()
