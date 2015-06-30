@@ -4,6 +4,7 @@ omit =
     */site-packages/nose/*
     zktraffic/cli/zk.py
 exclude_lines =
+    pragma: no cover
     raise ValueError
     raise DeserializationError
     def __str__
@@ -16,3 +17,5 @@ exclude_lines =
     except AttributeError*
     except(EnvironmentError, ValueError*)*
     def _print_color
+    raise self.RegistrationError
+    raise StringTooLong

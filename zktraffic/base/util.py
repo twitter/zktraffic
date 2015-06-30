@@ -93,7 +93,7 @@ def read_string(data, offset, maxlen=1024, default="unreadable"):
 def read_buffer(data, offset, maxlen=1024):
   old = offset
   length, offset = read_number(data, offset)
-  if length <= 0:
+  if length <= 0:  # pragma: no cover
     return (b'', old)
 
   if length > maxlen:

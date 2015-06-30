@@ -171,13 +171,13 @@ class Sniffer(Thread):
 
     handlers.append(handler)
 
-  def wants_stop(self, *args, **kwargs):
+  def wants_stop(self, *args, **kwargs):  # pragma: no cover
     return self._wants_stop
 
   def run(self):
     try:
       log.info("Setting filter: %s", self.config.filter)
-      if self.config.iface == "any":
+      if self.config.iface == "any":  # pragma: no cover
         sniff(
           filter=self.config.filter,
           store=0,
@@ -262,7 +262,9 @@ class Sniffer(Thread):
     """
     if self.config.track_replies and not request.is_ping and not request.is_close:
       requests_xids = self._requests_xids[request.client]
-      if len(requests_xids) > self.config.max_queued_requests:
+      if len(requests_xids) > self.config.max_queued_requests:  # pragma: no cover
+        # TODO: logging the counts of each type of pkts in the queue when this happens
+        #       could be useful.
         if self._error_to_stderr:
           sys.stderr.write("Too many queued requests, replies for %s will be lost\n" %
                            request.client)
