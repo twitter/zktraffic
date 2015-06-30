@@ -15,9 +15,19 @@
 # ==================================================================================================
 
 
-from zktraffic.base.client_message import SetWatchesRequest
-from zktraffic.stats.accumulators import PerPathStatsAccumulator
+from zktraffic.base.client_message import (
+  ConnectRequest,
+  MultiRequest,
+  ReconfigRequest,
+  SetWatchesRequest
+)
+from zktraffic.base.server_message import (
+  ConnectReply,
+  MultiReply,
+  ReconfigReply,
+)
 from zktraffic.base.sniffer import Sniffer, SnifferConfig
+from zktraffic.stats.accumulators import PerPathStatsAccumulator
 
 from .common import consume_packets
 
@@ -81,11 +91,12 @@ def test_connects():
   assert stats._cur_stats["CloseRequest"][""] == 3
 
 
-def test_multi():
-  sniffer, stats = default_sniffer(aggregation_depth=1)
-  consume_packets('multi', sniffer)
+def test_connect_replies():
+  _test_requests_replies('connect_replies', ConnectRequest, ConnectReply, nreqs=3, nreps=3)
 
-  assert stats._cur_stats["MultiRequest"]["/foo"] == 1
+
+def test_multi():
+  _test_requests_replies('multi', MultiRequest, MultiReply, nreqs=1, nreps=1)
 
 
 def test_auth():
@@ -96,10 +107,8 @@ def test_auth():
 
 
 def test_reconfig():
-  sniffer, stats = default_sniffer()
-  consume_packets('reconfig', sniffer)
+  _test_requests_replies('reconfig', ReconfigRequest, ReconfigReply, nreqs=1, nreps=1)
 
-  assert stats._cur_stats["ReconfigRequest"][""] == 1
 
 def test_setwatches():
   requests = []
@@ -122,3 +131,25 @@ def test_setwatches():
   assert "/zookeeper" in req.child
   assert "/in/portland" in req.child
   assert "/" in req.child
+
+
+def _test_requests_replies(pcap_name, request_cls, reply_cls, nreqs, nreps):
+  requests = []
+  replies = []
+
+  def handler(msg):
+    if isinstance(msg, request_cls):
+      requests.append(msg)
+    elif isinstance(msg, reply_cls):
+      replies.append(msg)
+
+  config = SnifferConfig()
+  config.track_replies = True
+  sniffer = Sniffer(config)
+  sniffer.add_request_handler(handler)
+  sniffer.add_reply_handler(handler)
+
+  consume_packets(pcap_name, sniffer)
+
+  assert len(requests) == nreqs
+  assert len(replies) == nreps

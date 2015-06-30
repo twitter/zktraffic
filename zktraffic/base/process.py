@@ -68,7 +68,7 @@ class PsUtilProcessOptions(object):
             if not 0 <= nice_level <= 20:
                 raise ValueError('nice level must be between 0 and 20')
             self.process.nice(nice_level)
-        except(EnvironmentError, ValueError, psutil.AccessDenied, psutil.NoSuchProcess) as e:
+        except (EnvironmentError, ValueError, psutil.AccessDenied, psutil.NoSuchProcess) as e:
             log.warn('unable to set nice level on process: {}'.format(e))
 
     @property
@@ -126,4 +126,4 @@ class DummyProcessOptions(object):
     return []
 
 
-ProcessOptions = PsUtilProcessOptions if HAS_PSUTIL else DummyProcessOptions
+ProcessOptions = PsUtilProcessOptions if HAS_PSUTIL else DummyProcessOptions  # pragma: nocover

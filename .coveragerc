@@ -8,3 +8,11 @@ exclude_lines =
     raise DeserializationError
     def __str__
     except StringTooLong
+    except ParsingError
+    raise cls.TooManyWatches()
+    raise BadPacket
+    except ImportError
+    except (OSError, ValueError)*
+    except AttributeError*
+    except(EnvironmentError, ValueError*)*
+    def _print_color
