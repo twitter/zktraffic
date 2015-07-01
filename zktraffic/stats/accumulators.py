@@ -35,13 +35,13 @@ class TopStatsAccumulator(object):
     self.init_cur_stats()
     self._aggregation_depth = aggregation_depth
 
-  def update_request_stats(self, request):
+  def update_request_stats(self, request):  # pragma: no cover
     raise NotImplementedError
 
-  def update_reply_stats(self, reply):
+  def update_reply_stats(self, reply):  # pragma: no cover
     raise NotImplementedError
 
-  def update_event_stats(self, event):
+  def update_event_stats(self, event):  # pragma: no cover
     raise NotImplementedError
 
   def accumulate_stats(self):
@@ -72,7 +72,7 @@ class TopStatsAccumulator(object):
   def stats(self, top):
     top_stats = {}
 
-    if top == 0:
+    if top == 0:  # pragma: no cover
       return self._prev_stats
 
     for op, per_path_s in self._prev_stats.items():

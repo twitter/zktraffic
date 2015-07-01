@@ -121,4 +121,24 @@ def test_endpoints():
   assert paths["writes/load-testing"] == 20
   assert paths["writesBytes/load-testing"] == 10999
 
+  conn.request("GET", "/json/ips")
+  resp = conn.getresponse()
+  assert resp.status == 200
+  ips = json.loads(resp.read())
+  assert ips["per_ip/total/writes"] == 20
+  assert ips["per_ip/ConnectRequest:127.0.0.1"] == 6
+
+  conn.request("GET", "/json/auths")
+  resp = conn.getresponse()
+  assert resp.status == 200
+  auths = json.loads(resp.read())
+  assert auths["per_auth/ConnectRequest:noauth"] == 6
+
+  conn.request("GET", "/json/auths-dump")
+  resp = conn.getresponse()
+  assert resp.status == 200
+  auths_dump = json.loads(resp.read())
+  assert auths_dump["127.0.0.1:59819"] == "noauth"
+  assert auths_dump["127.0.0.1:59817"] == "noauth"
+
   conn.close()

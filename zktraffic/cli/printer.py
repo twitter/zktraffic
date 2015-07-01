@@ -137,19 +137,19 @@ class BasePrinter(Thread):
   def seen_events(self):
     return self._seen_events
 
-  def run(self, *args, **kwargs):
+  def run(self, *args, **kwargs):  # pragma: no cover
     pass
 
-  def request_handler(self, *args, **kwargs):
+  def request_handler(self, *args, **kwargs):  # pragma: no cover
     pass
 
-  def reply_handler(self, *args, **kwargs):
+  def reply_handler(self, *args, **kwargs):  # pragma: no cover
     pass
 
-  def event_handler(self, *args, **kwargs):
+  def event_handler(self, *args, **kwargs):  # pragma: no cover
     pass
 
-  def colored_write(self, *msgs):
+  def colored_write(self, *msgs):  # pragma: no cover
     c = colors.COLORS[msgs[0].client.__hash__() % NUM_COLORS]
     cfunc = getattr(colors, c)
     for i, m in enumerate(msgs):
@@ -161,7 +161,7 @@ class BasePrinter(Thread):
       self._output.write("%s%s %s" % (right_arrow(i), format_timestamp(m.timestamp), m))
     self._output.flush()
 
-  def cancel(self, *args, **kwargs):
+  def cancel(self, *args, **kwargs):  # pragma: no cover
     """ will be called on KeyboardInterrupt """
     pass
 
@@ -170,7 +170,7 @@ class BasePrinter(Thread):
     self._wants_stopped = True
 
   @property
-  def empty(self):
+  def empty(self):  # pragma: no cover
     """ returns true if nothing is queued """
     return True
 
@@ -404,7 +404,7 @@ class LatencyPrinter(BasePrinter):
     self._output.write("%s\n" % tabulate(data, headers=headers))
     self._output.flush()
 
-  def cancel(self):
+  def cancel(self):  # pragma: no cover
     """ if we were interrupted, but haven't reported; do it now """
     self.report()
 

@@ -31,7 +31,7 @@ class EndpointsServer(HttpServer):
 
     self._sniffer = Sniffer(config, request_handler, reply_handler, event_handler)
 
-    if start_sniffer:
+    if start_sniffer:  # pragma: no cover
       self._sniffer.start()
 
     super(EndpointsServer, self).__init__()
