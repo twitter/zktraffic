@@ -32,10 +32,12 @@ from zktraffic.cli.printer import (
 from .common import consume_packets
 
 
-def get_sniffer(printer):
+def get_sniffer(printer, with_pings=True):
   config = SnifferConfig()
   config.track_replies = True
-  config.include_pings()
+
+  if with_pings:
+    config.include_pings()
 
   sniffer = Sniffer(config)
   sniffer.add_request_handler(printer.request_handler)
@@ -79,6 +81,32 @@ def test_default_printer():
   _test(DefaultPrinter)
 
 
+def test_default_printer_close_reqs():
+  output = StringIO()
+  printer = UnpairedPrinter(colors=False, loopback=True, output=output)
+  printer.start()
+
+  sniffer = get_sniffer(printer, with_pings=False)
+  consume_packets('connects', sniffer)  # no connect replies in this pcap file
+
+  # 3 connect requests + 3 close requests
+  expected = [6, 0, 0]
+  while [printer.seen_requests, printer.seen_replies, printer.seen_events] != expected:
+    time.sleep(0.001)
+
+  # wait for queues to be empty
+  while not printer.empty:
+    time.sleep(0.001)
+
+  # stop the printer
+  printer.stop()
+  while not printer.stopped:
+    time.sleep(0.001)
+
+  assert "ConnectRequest" in output.getvalue()
+  assert "CloseRequest" in output.getvalue()
+
+
 def test_unpaired_printer():
   _test(UnpairedPrinter)
 
@@ -108,6 +136,27 @@ def test_count_printer():
   assert "CreateRequest 1" in output.getvalue()
   assert "NodeDataChanged 1" in output.getvalue()
   assert "SetDataRequest 1" in output.getvalue()
+
+
+def test_count_printer():
+  output = StringIO()
+
+  printer = CountPrinter(
+    count=14,             # requests + events, replies are not counted
+    group_by='client',
+    loopback=True,
+    aggregation_depth=0,
+    output=output
+  )
+  printer.start()
+
+  sniffer = get_sniffer(printer)
+  consume_packets('dump', sniffer)
+
+  while not printer.stopped:
+    time.sleep(0.001)
+
+  assert "127.0.0.1:60446 14" in output.getvalue()
 
 
 def test_latency_printer():
