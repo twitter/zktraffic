@@ -20,7 +20,10 @@ from .printer import Printer
 
 from zktraffic import __version__
 from zktraffic.network.sniffer import Sniffer
-from zktraffic.zab.quorum_packet import QuorumPacket
+from zktraffic.zab.quorum_packet import (
+  Ping,
+  QuorumPacket
+)
 
 from twitter.common import app
 from twitter.common.log.options import LogOptions
@@ -29,10 +32,16 @@ from twitter.common.log.options import LogOptions
 def setup():
   LogOptions.set_stderr_log_level('NONE')
 
-  app.add_option('--iface', default='eth0', type=str)
-  app.add_option('--port', default=2889, type=int)
-  app.add_option('-c', '--colors', default=False, action='store_true')
-  app.add_option('--dump-bad-packet', default=False, action='store_true')
+  app.add_option('--iface', default='eth0', type=str,
+                 help='The interface to sniff on')
+  app.add_option('--port', default=2889, type=int,
+                 help='The ZAB port used by the leader')
+  app.add_option('-c', '--colors', default=False, action='store_true',
+                 help='Color each learner/leader stream differently')
+  app.add_option('--dump-bad-packet', default=False, action='store_true',
+                 help='Dump packets that cannot be deserialized')
+  app.add_option('--include-pings', default=False, action='store_true',
+                 help='Whether to include pings send from learners to the leader')
   app.add_option('--version', default=False, action='store_true')
 
 
@@ -41,7 +50,8 @@ def main(_, options):
     sys.stdout.write("%s\n" % __version__)
     sys.exit(0)
 
-  printer = Printer(options.colors)
+  skip = None if options.include_pings else lambda msg: isinstance(msg, Ping)
+  printer = Printer(options.colors, output=sys.stdout, skip_print=skip)
   sniffer = Sniffer(options.iface, options.port, QuorumPacket, printer.add, options.dump_bad_packet)
 
   try:

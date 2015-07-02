@@ -84,10 +84,10 @@ class QuorumPacketBase(type):
     obj = super(QuorumPacketBase, cls).__new__(cls, clsname, bases, dct)
     if obj.PTYPE in cls.TYPES:
       raise ValueError("Duplicate ptype name: %s" % obj.PTYPE)
-    else:
-      if obj.PTYPE is not None:
-        cls.TYPES[obj.PTYPE] = obj
-      return obj
+
+    if obj.PTYPE is not None:
+      cls.TYPES[obj.PTYPE] = obj
+    return obj
 
   @classmethod
   def get(cls, key, default=None):
@@ -156,7 +156,7 @@ class QuorumPacket(QuorumPacketBase("QuorumPacketBase", (object,), {})):
         parts.append(" %s=%s," % (name, value))
     parts.append(")")
 
-    return "\n".join(parts)
+    return "\n".join(parts) + "\n"
 
 
 class Request(QuorumPacket):

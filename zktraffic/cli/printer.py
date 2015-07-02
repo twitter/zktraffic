@@ -35,7 +35,7 @@ NUM_COLORS = len(colors.COLORS)
 
 class Printer(Thread):
   """ simple printer thread to use with FLE & ZAB messages """
-  def __init__(self, colors, output=sys.stdout):
+  def __init__(self, colors, output=sys.stdout, skip_print=None):
     super(Printer, self).__init__()
     self.setDaemon(True)
     self._queue = deque()
@@ -43,6 +43,7 @@ class Printer(Thread):
     self._output = output
     self._stopped = True
     self._wants_stopped = False
+    self._skip_print = skip_print  # a callable that takes msg and returns a bool
     self.start()
 
   @property
@@ -61,7 +62,9 @@ class Printer(Thread):
 
     while not self._wants_stopped:
       try:
-        self._print(self._queue.popleft())
+        msg = self._queue.popleft()
+        if not self._skip_print or not self._skip_print(msg):
+          self._print(msg)
       except IndexError:
         time.sleep(0.1)
       except IOError:  # PIPE broken, most likely
