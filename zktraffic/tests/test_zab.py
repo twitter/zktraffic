@@ -17,7 +17,10 @@
 import unittest
 
 from zktraffic.base.network import BadPacket
-from zktraffic.zab.quorum_packet import QuorumPacket
+from zktraffic.zab.quorum_packet import (
+  PacketType,
+  QuorumPacket
+)
 
 
 class ZabTestCase(unittest.TestCase):
@@ -28,5 +31,5 @@ class ZabTestCase(unittest.TestCase):
       'cchenwashere',                      # data
     )
     packet = QuorumPacket.from_payload(payload, '127.0.0.1:2889', '127.0.0.1:10000', 0)
-    self.assertEqual(2, packet.type)
-    self.assertEqual(2000, packet.zxid)
+    self.assertEqual(PacketType.PROPOSAL, packet.type)
+    self.assertEqual(packet.zxid, 2000)
