@@ -29,10 +29,15 @@ class TestablePerPathAccumulator(PerPathStatsAccumulator):
     super(TestablePerPathAccumulator, self).__init__(*args, **kwargs)
     self.processed_requests = 0
     self.processed_events = 0
+    self.processed_replies = 0
 
   def update_request_stats(self, request):
     super(TestablePerPathAccumulator, self).update_request_stats(request)
     self.processed_requests += 1
+
+  def update_reply_stats(self, reply):
+    super(TestablePerPathAccumulator, self).update_reply_stats(reply)
+    self.processed_replies += 1
 
   def update_event_stats(self, event):
     super(TestablePerPathAccumulator, self).update_event_stats(event)
@@ -62,6 +67,10 @@ class TestableStatsLoader(object):
     return self._loader.handle_request
 
   @property
+  def handle_reply(self):
+    return self._loader.handle_reply
+
+  @property
   def handle_event(self):
     return self._loader.handle_event
 
@@ -87,6 +96,20 @@ def wait_for_stats(zkt, pcap_file, loop_cond):
       break
 
 
+def get_sniffer(request_handler, reply_handler=None, event_handler=None):
+  config = SnifferConfig()
+  config.track_replies = True
+
+  sniffer = Sniffer(config)
+  sniffer.add_request_handler(request_handler)
+  if reply_handler:
+    sniffer.add_reply_handler(reply_handler)
+  if event_handler:
+    sniffer.add_event_handler(event_handler)
+
+  return sniffer
+
+
 def test_init_path_stats():
   stats = TestableStatsLoader(aggregation_depth=1)
   cur_stats = stats.cur_stats
@@ -105,9 +128,8 @@ def test_init_path_stats():
   assert "/readBytes" in cur_stats["total"]
 
   #add some traffic
-  zkt = Sniffer(SnifferConfig())
-  zkt.add_request_handler(stats.handle_request)
-  wait_for_stats(zkt, "set_data", lambda: stats.processed_requests < NUMBER_OF_REQUESTS_SET_DATA)
+  sniffer = get_sniffer(stats.handle_request)
+  wait_for_stats(sniffer, "set_data", lambda: stats.processed_requests < NUMBER_OF_REQUESTS_SET_DATA)
   cur_stats = stats.cur_stats
 
   #writes for / should stay 0
@@ -116,13 +138,13 @@ def test_init_path_stats():
 
   stats.stop()
 
+
 def test_per_path_stats():
   stats = TestableStatsLoader(aggregation_depth=1)
-  zkt = Sniffer(SnifferConfig())
-  zkt.add_request_handler(stats.handle_request)
+  sniffer = get_sniffer(stats.handle_request)
 
   wait_for_stats(
-    zkt, "set_data", lambda: stats.processed_requests < NUMBER_OF_REQUESTS_SET_DATA)
+    sniffer, "set_data", lambda: stats.processed_requests < NUMBER_OF_REQUESTS_SET_DATA)
   cur_stats = stats.cur_stats
 
   assert cur_stats["writes"]["/load-testing"] == 20
@@ -133,11 +155,10 @@ def test_per_path_stats():
 
 def test_per_path_stats_aggregated():
   stats = TestableStatsLoader(aggregation_depth=2)
-  zkt = Sniffer(SnifferConfig())
-  zkt.add_request_handler(stats.handle_request)
+  sniffer = get_sniffer(stats.handle_request)
 
   wait_for_stats(
-    zkt, "set_data", lambda: stats.processed_requests < NUMBER_OF_REQUESTS_SET_DATA)
+    sniffer, "set_data", lambda: stats.processed_requests < NUMBER_OF_REQUESTS_SET_DATA)
   cur_stats = stats.cur_stats
 
   for i in range(0, 5):
@@ -152,11 +173,10 @@ def test_per_path_stats_aggregated():
 
 def test_setting_watches():
   stats = TestableStatsLoader(aggregation_depth=1)
-  zkt = Sniffer(SnifferConfig())
-  zkt.add_request_handler(stats.handle_request)
+  sniffer = get_sniffer(stats.handle_request)
 
   wait_for_stats(
-    zkt, "getdata_watches", lambda: stats.processed_requests < NUMBER_OF_REQUESTS_WATCHES)
+    sniffer, "getdata_watches", lambda: stats.processed_requests < NUMBER_OF_REQUESTS_WATCHES)
   cur_stats = stats.cur_stats
 
   assert cur_stats["watches"]["/test"] == 2
@@ -168,13 +188,25 @@ def test_setting_watches():
 
 def test_firing_watches():
   stats = TestableStatsLoader(aggregation_depth=2)
-  zkt = Sniffer(SnifferConfig())
-  zkt.add_request_handler(stats.handle_request)
-  zkt.add_event_handler(stats.handle_event)
 
-  wait_for_stats(zkt, "fire_watches", lambda: stats.processed_events < 1)
+  sniffer = get_sniffer(stats.handle_request, stats.handle_reply, stats.handle_event)
+
+  wait_for_stats(sniffer, "fire_watches", lambda: stats.processed_events < 1)
   cur_stats = stats.cur_stats
 
   assert cur_stats["NodeChildrenChanged"]["/in/portland"] == 1
+
+  stats.stop()
+
+
+def test_auth():
+  stats = TestableStatsLoader(aggregation_depth=1)
+
+  sniffer = get_sniffer(stats.handle_request, stats.handle_reply, stats.handle_event)
+
+  wait_for_stats(sniffer, "auth", lambda: stats.processed_requests < 1)
+  cur_stats = stats.cur_stats
+
+  assert cur_stats["SetAuthRequest"]["/tacos:tacos"] == 1
 
   stats.stop()

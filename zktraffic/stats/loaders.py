@@ -128,7 +128,7 @@ class QueueStatsLoader(ExceptionalThread):
     """ queue items send to us by the sniffer """
     with self._cv:
       count = len(queue)
-      if count > queue.maxlength():
+      if count > queue.maxlength():  # pragma: no cover
         log.warn("Too many %s queued (%d)", label, count)
         return
 

@@ -123,10 +123,10 @@ class PerIPStatsAccumulator(TopStatsAccumulator):
   def update_request_stats(self, request):
     self._update_request_stats(self.get_path(request, request.ip), request)
 
-  def update_reply_stats(self, reply):
+  def update_reply_stats(self, reply):  # pragma: no cover
     pass
 
-  def update_event_stats(self, event):
+  def update_event_stats(self, event):  # pragma: no cover
     pass
 
 
@@ -134,8 +134,8 @@ class PerAuthStatsAccumulator(TopStatsAccumulator):
   def update_request_stats(self, request):
     self._update_request_stats(self.get_path(request, request.auth), request)
 
-  def update_reply_stats(self, reply):
+  def update_reply_stats(self, reply):  # pragma: no cover
     pass
 
-  def update_event_stats(self, event):
+  def update_event_stats(self, event):  # pragma: no cover
     pass
