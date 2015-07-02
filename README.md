@@ -288,45 +288,93 @@ zab-dump:
 ```
 $ sudo zab-dump --iface eth0
 
-QuorumPacket(
-     timestamp=00:15:17:108798,
-     src=10.0.0.1:2889,
-     dst=10.0.0.2:32938,
-     type=proposal,
-     zxid=-1,
-     length=105
+Request(
+ cxid=6,
+ dst=10.0.0.1:2889,
+ length=112,
+ req_type=CreateRequest,
+ session_id=0x34e4d23b0d70001,
+ src=10.0.0.2:48604,
+ timestr=22:54:31:995353,
+ zxid=-1,
 )
-QuorumPacket(
-     timestamp=00:15:17:109240,
-     src=10.0.0.2:32938,
-     dst=10.0.0.1:2889,
-     type=ack,
-     zxid=4296356349,
-     length=98
+Proposal(
+ cxid=6,
+ dst=10.0.0.2:48603,
+ length=110,
+ session_id=0x34e4d23b0d70001,
+ src=10.0.0.1:2889,
+ timestr=22:54:31:995753,
+ txn_time=1435816471995,
+ txn_type=CreateRequest,
+ txn_zxid=8589934619,
+ zxid=8589934619,
 )
-QuorumPacket(
-     timestamp=00:15:17:109245,
-     src=10.0.0.3:33090,
-     dst=10.0.0.1:2889,
-     type=ack,
-     zxid=4296356349,
-     length=98
+Proposal(
+ cxid=6,
+ dst=10.0.0.1:48604,
+ length=110,
+ session_id=0x34e4d23b0d70001,
+ src=10.0.0.1:2889,
+ timestr=22:54:31:995755,
+ txn_time=1435816471995,
+ txn_type=CreateRequest,
+ txn_zxid=8589934619,
+ zxid=8589934619,
 )
-QuorumPacket(
-     timestamp=00:15:17:109259,
-     src=10.0.0.4:32900,
-     dst=10.0.0.1:2889,
-     type=ack,
-     zxid=4296356349,
-     length=98
+Proposal(
+ cxid=6,
+ dst=10.0.0.3:48605,
+ length=110,
+ session_id=0x34e4d23b0d70001,
+ src=10.0.0.1:2889,
+ timestr=22:54:31:995770,
+ txn_time=1435816471995,
+ txn_type=CreateRequest,
+ txn_zxid=8589934619,
+ zxid=8589934619,
 )
-QuorumPacket(
-     timestamp=00:15:17:110037,
-     src=10.0.0.1:2889,
-     dst=10.0.0.4:32900,
-     type=commit,
-     zxid=4296356349,
-     length=20
+Ack(
+ dst=10.0.0.1:2889,
+ length=20,
+ src=10.0.0.1:48603,
+ timestr=22:54:31:996068,
+ zxid=8589934619,
+)
+Ack(
+ dst=10.0.0.1:2889,
+ length=20,
+ src=10.0.0.1:48604,
+ timestr=22:54:31:996316,
+ zxid=8589934619,
+)
+Ack(
+ dst=10.0.0.1:2889,
+ length=20,
+ src=10.0.0.1:48604,
+ timestr=22:54:31:996318,
+ zxid=8589934619,
+)
+Commit(
+ dst=10.0.0.1:48603,
+ length=20,
+ src=10.0.0.1:2889,
+ timestr=22:54:31:996193,
+ zxid=8589934619,
+)
+Commit(
+ dst=10.0.0.2:48604,
+ length=20,
+ src=10.0.0.1:2889,
+ timestr=22:54:31:996195,
+ zxid=8589934619,
+)
+Commit(
+ dst=10.0.0.2:48605,
+ length=20,
+ src=10.0.0.1:2889,
+ timestr=22:54:31:996442,
+ zxid=8589934619,
 )
 ...
 
