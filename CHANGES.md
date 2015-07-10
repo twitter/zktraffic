@@ -1,16 +1,18 @@
 ChangeLog
 =========
 
-0.1.6 (2015-06-XX)
+0.1.6 (2015-07-10)
 --------------------
 
 Bug Handling
 ************
--
+- zab-dump: createSession's opcode was missing
 
 Features
 ********
 - zk-dump: add support for profiling latencies by path/type/client
+- zab-dump: don't print learner pings unless --include-pings
+- fle-dump/zab-dump: improved test coverage
 
 0.1.5 (2015-06-22)
 --------------------
