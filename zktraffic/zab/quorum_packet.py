@@ -115,6 +115,10 @@ class QuorumPacket(QuorumPacketBase("QuorumPacketBase", (object,), {})):
   def type_literal(self):
     return PacketType.to_str(self.type)
 
+  @property
+  def zxid_literal(self):
+    return self.zxid if self.zxid == -1 else "0x%x" % self.zxid
+
   @classmethod
   def with_params(cls, timestamp, src, dst, ptype, zxid, data, offset):
     return cls(timestamp, src, dst, ptype, zxid, len(data))
