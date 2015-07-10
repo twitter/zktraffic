@@ -22,17 +22,33 @@ from zktraffic.network.sniffer import Sniffer
 from zktraffic.zab.quorum_packet import (
   Ack,
   Commit,
+  CommitAndActivate,
+  FollowerInfo,
   PacketType,
   Ping,
   Proposal,
   QuorumPacket,
   Request,
+  Revalidate
 )
 
 from .common import get_full_path
 
 
 LEADER_PORT = 20022
+
+
+def run_sniffer(handler, pcapfile, port=LEADER_PORT):
+  sniffer = Sniffer(
+    iface="test",
+    port=port,
+    msg_cls=QuorumPacket,
+    handler=handler,
+    dump_bad_packet=False,
+    start=False
+  )
+
+  sniffer.run(offline=get_full_path(pcapfile))
 
 
 class ZabTestCase(unittest.TestCase):
@@ -65,16 +81,7 @@ class ZabTestCase(unittest.TestCase):
       elif isinstance(message, Ping):
         pings.append(message)
 
-    sniffer = Sniffer(
-      iface="test",
-      port=LEADER_PORT,
-      msg_cls=QuorumPacket,
-      handler=handler,
-      dump_bad_packet=False,
-      start=False
-    )
-
-    sniffer.run(offline=get_full_path('zab_request'))
+    run_sniffer(handler, "zab_request")
 
     # requests
     assert len(requests) == 3
@@ -120,3 +127,48 @@ class ZabTestCase(unittest.TestCase):
     assert len(pings) == 57  # for such a short run, this numbers looks too high
 
     assert pings[0].zxid_literal == "0x100000000"
+
+  def test_revalidate(self):
+    revalidates = []
+
+    def handler(message):
+      if isinstance(message, Revalidate):
+        revalidates.append(message)
+
+    run_sniffer(handler, "zab_revalidate")
+
+    assert len(revalidates) == 2
+    assert revalidates[0].zxid == -1
+    assert revalidates[0].session_id_literal == "0x3001df405ba0000"
+    assert revalidates[0].timeout == 10000
+
+  def test_commitandactivate(self):
+    commitandactivates = []
+
+    def handler(message):
+      if isinstance(message, CommitAndActivate):
+        commitandactivates.append(message)
+
+    run_sniffer(handler, "zab_commitandactivate")
+
+    assert len(commitandactivates) == 4  # 2 join + 2 leaving
+    assert commitandactivates[0].suggested_leader_id == 3
+    assert commitandactivates[0].zxid_literal == "0x10000000d"
+
+  def test_followerinfo(self):
+    followerinfos = []
+
+    def handler(message):
+      if isinstance(message, FollowerInfo):
+        followerinfos.append(message)
+
+    run_sniffer(handler, "zab_followerinfo")
+
+    assert len(followerinfos) == 2  # this is a 3 members (participants) cluster
+    assert followerinfos[0].config_version == 0
+
+    # Note that this is *not* the same version as in FLE (which is -65536 and a long)
+    assert followerinfos[0].protocol_version == 65536
+
+    assert followerinfos[0].sid == 2
+    assert followerinfos[0].zxid_literal == "0x0"
