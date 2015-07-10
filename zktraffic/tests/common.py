@@ -26,6 +26,9 @@ _resources_dir = os.path.join(
 )
 
 
-def consume_packets(capture_file, zkt):
-  path = os.path.join(_resources_dir, "%s.pcap" % (capture_file))
-  sniff(offline=path, prn=zkt.handle_packet)
+def get_full_path(name):
+  return os.path.join(_resources_dir, "%s.pcap" % (name))
+
+
+def consume_packets(capture_file, sniffer):
+  sniff(offline=get_full_path(capture_file), prn=sniffer.handle_packet)

@@ -44,7 +44,7 @@ class Sniffer(Thread):
   """
   class RegistrationError(Exception): pass
 
-  def __init__(self, iface, port, msg_cls, handler=None, dump_bad_packet=False):
+  def __init__(self, iface, port, msg_cls, handler=None, dump_bad_packet=False, start=True):
     super(Sniffer, self).__init__()
     self.setDaemon(True)
 
@@ -58,7 +58,8 @@ class Sniffer(Thread):
     if handler is not None:
       self.add_handler(handler)
 
-    self.start()
+    if start:  # pragma: no cover
+      self.start()
 
   def add_handler(self, handler):
     if handler is None:
@@ -69,17 +70,22 @@ class Sniffer(Thread):
 
     self._handlers.append(handler)
 
-  def run(self):
+  def run(self, *args, **kwargs):
     pfilter = "port %d" % self._port
     try:
-      if self._iface == "any":
-        sniff(filter=pfilter, store=0, prn=self.handle_packet)
-      else:
-        sniff(filter=pfilter, store=0, prn=self.handle_packet, iface=self._iface)
+      sniff_kwargs = {"filter": pfilter, "store": 0, "prn": self.handle_packet}
+      if self._iface != "any":
+        sniff_kwargs["iface"] = self._iface
+
+      if "offline" in kwargs:
+        sniff_kwargs["offline"] = kwargs["offline"]
+
+      sniff(**sniff_kwargs)
     except socket.error as ex:
       sys.stderr.write("Error: %s, device: %s\n" % (ex, self._iface))
     finally:
-      os.kill(os.getpid(), signal.SIGINT)
+      if "offline" not in kwargs:
+        os.kill(os.getpid(), signal.SIGINT)
 
   def handle_packet(self, packet):
     try:
