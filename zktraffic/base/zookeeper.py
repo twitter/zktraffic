@@ -41,6 +41,7 @@ class OpCodes(object):
   MULTI = 14
   CREATE2 = 15
   RECONFIG = 16
+  CREATESESSION = -10
   CLOSE = -11
   SETAUTH = 100
   SETWATCHES = 101
@@ -63,6 +64,7 @@ ZK_REQUEST_TYPES = {
   OpCodes.MULTI: 'MultiRequest',
   OpCodes.CREATE2: 'CreateRequest',
   OpCodes.RECONFIG: 'ReconfigRequest',
+  OpCodes.CREATESESSION: 'CreateSession',
   OpCodes.CLOSE: 'CloseRequest',
   OpCodes.SETAUTH: 'SetAuthRequest',
   OpCodes.SETWATCHES: 'SetWatchesRequest',
