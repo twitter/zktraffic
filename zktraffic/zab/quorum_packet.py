@@ -273,8 +273,7 @@ class Inform(Proposal):
 class CommitAndActivate(QuorumPacket):
   PTYPE = PacketType.COMMITANDACTIVATE
   __slots__ = ("suggested_leader_id")
-  def __init__(self, timestamp, src, dst, ptype, zxid, length,
-               suggested_leader_id):
+  def __init__(self, timestamp, src, dst, ptype, zxid, length, suggested_leader_id):
     super(CommitAndActivate, self).__init__(timestamp, src, dst, ptype, zxid, length)
     self.suggested_leader_id = suggested_leader_id
 
@@ -282,8 +281,7 @@ class CommitAndActivate(QuorumPacket):
   def with_params(cls, timestamp, src, dst, ptype, zxid, data, offset):
     data_len, offset = read_number(data, offset)
     suggested_leader_id, offset = read_long(data, offset)
-    return cls(timestamp, src, dst, ptype, zxid, len(data),
-               suggested_leader_id)
+    return cls(timestamp, src, dst, ptype, zxid, len(data), suggested_leader_id)
 
 
 class NewLeader(QuorumPacket):
@@ -330,8 +328,7 @@ class ObserverInfo(FollowerInfo):
 class LeaderInfo(QuorumPacket):
   PTYPE = PacketType.LEADERINFO
   __slots__ = ("protocol_version")
-  def __init__(self, timestamp, src, dst, ptype, zxid, length,
-               protocol_version):
+  def __init__(self, timestamp, src, dst, ptype, zxid, length, protocol_version):
     super(LeaderInfo, self).__init__(timestamp, src, dst, ptype, zxid, length)
     self.protocol_version = protocol_version
 
@@ -339,15 +336,13 @@ class LeaderInfo(QuorumPacket):
   def with_params(cls, timestamp, src, dst, ptype, zxid, data, offset):
     data_len, offset = read_number(data, offset)
     protocol_version, offset = read_number(data, offset)
-    return cls(timestamp, src, dst, ptype, zxid, len(data),
-               protocol_version)
+    return cls(timestamp, src, dst, ptype, zxid, len(data), protocol_version)
 
 
 class AckEpoch(QuorumPacket):
   PTYPE = PacketType.ACKEPOCH
   __slots__ = ("epoch")
-  def __init__(self, timestamp, src, dst, ptype, zxid, length,
-               epoch):
+  def __init__(self, timestamp, src, dst, ptype, zxid, length, epoch):
     super(AckEpoch, self).__init__(timestamp, src, dst, ptype, zxid, length)
     self.epoch = epoch
 
@@ -355,8 +350,7 @@ class AckEpoch(QuorumPacket):
   def with_params(cls, timestamp, src, dst, ptype, zxid, data, offset):
     data_len, offset = read_number(data, offset)
     epoch, offset = read_number(data, offset)
-    return cls(timestamp, src, dst, ptype, zxid, len(data),
-               epoch)
+    return cls(timestamp, src, dst, ptype, zxid, len(data), epoch)
 
 
 class InformAndActivate(Proposal):
