@@ -24,6 +24,7 @@ from zktraffic.zab.quorum_packet import (
   Commit,
   CommitAndActivate,
   FollowerInfo,
+  InformAndActivate,
   PacketType,
   Ping,
   Proposal,
@@ -172,3 +173,18 @@ class ZabTestCase(unittest.TestCase):
 
     assert followerinfos[0].sid == 2
     assert followerinfos[0].zxid_literal == "0x0"
+
+  def test_informandactivate(self):
+    informandactivates = []
+
+    def handler(message):
+      if isinstance(message, InformAndActivate):
+        informandactivates.append(message)
+
+    run_sniffer(handler, "zab_informandactivate")
+
+    assert len(informandactivates) == 2  # we have 2 observers
+    assert informandactivates[0].suggested_leader_id == 3
+    assert informandactivates[0].session_id_literal == "0x34e8105a7540000"
+    assert informandactivates[0].txn_type == OpCodes.RECONFIG
+    assert informandactivates[0].zxid_literal == "0x100000006"
