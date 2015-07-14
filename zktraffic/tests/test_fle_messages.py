@@ -22,23 +22,23 @@ from zktraffic.fle.message import Message
 
 class MessagesTestCase(unittest.TestCase):
   def test_initial_message(self):
-    payload = '%s%s%s%s' % (
+    payload = ''.join((
       '\xff\xff\xff\xff\xff\xff\x00\x00',  # proto version: -65536L
       '\x00\x00\x00\x00\x00\x00\x00\x06',  # server id
       '\x00\x00\x00\x0e',                  # addr len
       '127.0.0.1:3888',                    # addr
-    )
+    ))
     init = Message.from_payload(payload, '127.0.0.1:3888', '127.0.0.1:9000', 0)
     self.assertEqual(6, init.server_id)
     self.assertEqual('127.0.0.1:3888', init.election_addr)
 
   def test_notification_28(self):
-    payload = '%s%s%s%s' % (
+    payload = ''.join((
       '\x00\x00\x00\x01',                  # state
       '\x00\x00\x00\x00\x00\x00\x00\x03',  # leader
-      '\x00\x00\x00\x00\x00\x00 \x00',     # zxid
-      '\x00\x00\x00\x00\x00\x00\x00\n',    # election epoch
-    )
+      '\x00\x00\x00\x00\x00\x00\x20\x00',     # zxid
+      '\x00\x00\x00\x00\x00\x00\x00\x0a',    # election epoch
+    ))
     notif = Message.from_payload(payload, '127.0.0.1:3888', '127.0.0.1:9000', 0)
     self.assertEqual(1, notif.state)
     self.assertEqual(3, notif.leader)
@@ -48,13 +48,13 @@ class MessagesTestCase(unittest.TestCase):
     self.assertEqual('', notif.config)
 
   def test_notification_36(self):
-    payload = '%s%s%s%s%s' % (
+    payload = ''.join((
       '\x00\x00\x00\x01',                  # state
       '\x00\x00\x00\x00\x00\x00\x00\x03',  # leader
-      '\x00\x00\x00\x00\x00\x00 \x00',     # zxid
-      '\x00\x00\x00\x00\x00\x00\x00\n',    # election epoch
-      '\x00\x00\x00\x00\x00\x00\x00\n',    # peer epoch
-    )
+      '\x00\x00\x00\x00\x00\x00\x20\x00',  # zxid
+      '\x00\x00\x00\x00\x00\x00\x00\x0a',  # election epoch
+      '\x00\x00\x00\x00\x00\x00\x00\x0a',  # peer epoch
+    ))
     notif = Message.from_payload(payload, '127.0.0.1:3888', '127.0.0.1:9000', 0)
     self.assertEqual(1, notif.state)
     self.assertEqual(3, notif.leader)
@@ -70,14 +70,16 @@ class MessagesTestCase(unittest.TestCase):
       'server.0=10.0.0.3:2889:3888:participant;0.0.0.0:2181',
       'version=deadbeef'
     )
-    payload = '%s%s%s%s%s%s' % (
+    payload = ''.join((
       '\x00\x00\x00\x01',                  # state
       '\x00\x00\x00\x00\x00\x00\x00\x03',  # leader
-      '\x00\x00\x00\x00\x00\x00 \x00',     # zxid
-      '\x00\x00\x00\x00\x00\x00\x00\n',    # election epoch
-      '\x00\x00\x00\x00\x00\x00\x00\n',    # peer epoch
+      '\x00\x00\x00\x00\x00\x00\x20\x00',  # zxid
+      '\x00\x00\x00\x00\x00\x00\x00\x0a',  # election epoch
+      '\x00\x00\x00\x00\x00\x00\x00\x0a',  # peer epoch
+      '\x00\x00\x00\x02',                  # current version
+      '\x00\x00\x00\xaf',                  # config length
       config,
-    )
+    ))
     notif = Message.from_payload(payload, '127.0.0.1:3888', '127.0.0.1:9000', 0)
     self.assertEqual(1, notif.state)
     self.assertEqual(3, notif.leader)
@@ -87,10 +89,10 @@ class MessagesTestCase(unittest.TestCase):
     self.assertEqual(config, notif.config)
 
   def test_invalid_state(self):
-    payload = '%s%s%s%s' % (
+    payload = ''.join((
       '\x00\x00\x00\x05',                  # bad state
       '\x00\x00\x00\x00\x00\x00\x00\x03',  # leader
-      '\x00\x00\x00\x00\x00\x00 \x00',     # zxid
-      '\x00\x00\x00\x00\x00\x00\x00\n',    # election epoch
-    )
+      '\x00\x00\x00\x00\x00\x00\x20\x00',  # zxid
+      '\x00\x00\x00\x00\x00\x00\x00\x0a',  # election epoch
+    ))
     self.assertRaises(BadPacket, Message.from_payload, payload, '127.0.0.1:388', '127.0.0.1:900', 0)
