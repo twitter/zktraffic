@@ -54,11 +54,11 @@ def run_sniffer(handler, pcapfile, port=LEADER_PORT):
 
 class ZabTestCase(unittest.TestCase):
   def test_basic(self):
-    payload = '%s%s%s' % (
+    payload = ''.join((
       '\x00\x00\x00\x02',                  # type
       '\x00\x00\x00\x00\x00\x00\x07\xd0',  # zxid
       'cchenwashere',                      # data
-    )
+    ))
     packet = QuorumPacket.from_payload(payload, '127.0.0.1:2889', '127.0.0.1:10000', 0)
     self.assertEqual(PacketType.PROPOSAL, packet.type)
     self.assertEqual(packet.zxid, 2000)
