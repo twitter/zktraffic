@@ -70,7 +70,12 @@ class Message(object):
       zxid, offset = read_long(data, offset)
       election_epoch, offset = read_long(data, offset)
       peer_epoch, offset = read_long(data, offset) if len(data) > cls.OLD_LEN else (-1, offset)
-      config = data[cls.WITH_CONFIG_LEN:] if len(data) > cls.WITH_CONFIG_LEN else ""
+      config = ""
+      if len(data) > cls.WITH_CONFIG_LEN:
+        currentversion, offset = read_number(data, offset)
+        if currentversion != Notification.CURRENTVERSION:
+          raise BadPacket("Invalid CURRENTVERSION: %d", currentversion)
+        config, _ = read_string(data, offset)
 
       return Notification(
         timestamp,
@@ -113,6 +118,8 @@ class Initial(Message):
 
 
 class Notification(Message):
+  CURRENTVERSION = 0x2
+
   __slots__ = (
     "timestamp",
     "src",
