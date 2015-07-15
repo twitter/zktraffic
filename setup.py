@@ -59,7 +59,7 @@ setup(name='zktraffic',
       license='Apache',
       packages=find_packages(),
       test_suite="zktraffic.tests",
-      scripts=['bin/fle-dump', 'bin/zab-dump', 'bin/zk-dump', 'bin/zk-stats-daemon'],
+      scripts=['bin/fle-dump', 'bin/zab-dump', 'bin/zk-dump', 'bin/zk-stats-daemon', 'bin/zk-omni-dump'],
       install_requires=[
           'ansicolors',
           'dpkt-fix',
