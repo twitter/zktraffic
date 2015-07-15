@@ -280,7 +280,8 @@ Notification(
 ```
 
 Note: for initial messages to be visible you'll need the patch available
-at [ZOOKEEPER-2098](https://issues.apache.org/jira/browse/ZOOKEEPER-2098 "ZOOKEEPER-2098").
+at [ZOOKEEPER-2098](https://issues.apache.org/jira/browse/ZOOKEEPER-2098 "ZOOKEEPER-2098"),
+if you are using ZooKeeper prior to ZooKeeper 3.5.1-rc2.
 
 If you are interested in debugging ZAB (ZooKeeper Atomic Broadcast protocol), you can use
 zab-dump:
