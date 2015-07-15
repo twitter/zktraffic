@@ -18,6 +18,7 @@
 """ helpers """
 
 import struct
+import re
 
 
 INT_STRUCT = struct.Struct('!i')
@@ -127,3 +128,95 @@ def read_int_int(data, offset):
 def parent_path(path, level):
   """ for level 3 and path /a/b/c/d/e/f this returns /a/b/c """
   return '/'.join(path.split('/')[0:level + 1])
+
+
+class QuorumConfig(object):
+  class BadConfig(ParsingError):
+    pass
+
+  class ConfigEntry(object):
+    pass
+
+  class Server(ConfigEntry):
+    sid = -1
+    zab_fle_hostname = None
+    zab_port = -1
+    fle_port = -1
+    learner_type = None
+    zk_hostname = None
+    zk_port = -1
+
+    def __init__(self, sid, address_str):
+      """
+      See org.apache.zookeeper.server.Quorum.QuorumPeer.QuorumServer
+      :param sid: int
+      :param address_str: str
+      """
+      self.sid = sid
+      server_client_parts = address_str.split(';')
+      server_parts = server_client_parts[0].split(':')
+      if len(server_client_parts) > 2 or len(server_parts) < 3 \
+              or len(server_parts) > 4:
+        raise QuorumConfig.BadConfig(address_str)
+
+      if len(server_client_parts) == 2:
+        client_parts = server_client_parts[1].split(':')
+        if len(client_parts) > 2:
+          raise QuorumConfig.BadConfig(address_str)
+
+        self.zk_hostname = client_parts[0] if len(client_parts) == 2 else '0.0.0.0'
+        try:
+          self.zk_port = int(client_parts[-1])
+        except ValueError as e:
+          raise QuorumConfig.BadConfig(e)
+
+      self.zab_fle_hostname = server_parts[0]
+      try:
+        self.zab_port = int(server_parts[1])
+        self.fle_port = int(server_parts[2])
+      except ValueError as e:
+        raise QuorumConfig.BadConfig(e)
+
+      if len(server_parts) == 4:
+        self.learner_type = server_parts[3]
+        if not self.learner_type in ('participant', 'observer'):
+          raise QuorumConfig.BadConfig(address_str)
+
+  class Version(ConfigEntry):
+    def __init__(self, version):
+      """
+      :param version: int
+      """
+      self.version = version
+
+  class Unsupported(ConfigEntry):
+    def __init__(self, line):
+      self.s = line
+
+  def __init__(self, config_string):
+    """
+    :param config_string: str
+    """
+    self.entries = []
+    empty_matcher = re.compile('^\s*$')
+    server_matcher = re.compile('server\.(\d+)=(.*)')
+    version_matcher = re.compile('version=(\d+)')
+    for line in config_string.splitlines():
+      if empty_matcher.match(line):
+        continue
+      server_m = server_matcher.match(line)
+      if server_m:
+        sid = int(server_m.group(1))
+        address_str = server_m.group(2)
+        server_ent = QuorumConfig.Server(sid, address_str)
+        self.entries.append(server_ent)
+        continue
+
+      version_m = version_matcher.match(line)
+      if version_m:
+        version = int(version_m.group(1))
+        version_ent = QuorumConfig.Version(version)
+        self.entries.append(version_ent)
+        continue
+
+      self.entries.append(QuorumConfig.Unsupported(line))
