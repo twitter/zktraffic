@@ -26,7 +26,7 @@ import socket
 import struct
 import sys
 
-from zktraffic.base.network import BadPacket, get_ip, get_ip_packet
+from zktraffic.base.network import BadPacket, get_ip, get_ip_packet, SnifferBase
 
 from scapy.sendrecv import sniff
 from scapy.config import conf as scapy_conf
@@ -38,7 +38,7 @@ scapy_conf.logLevel = logging.ERROR  # shush scappy
 MAX_PACKET_SIZE = 65535
 
 
-class Sniffer(Thread):
+class Sniffer(SnifferBase):
   """
   A generic & simple packet sniffer
   """
@@ -89,9 +89,8 @@ class Sniffer(Thread):
 
   def handle_packet(self, packet):
     try:
-      message = self._message_from_packet(packet)
-      for h in self._handlers:
-        h(message)
+      message = self.message_from_packet(packet)
+      self.handle_message(message)
     except (BadPacket, struct.error) as ex:
       if self._dump_bad_packet:
         print("got: %s" % str(ex))
@@ -102,7 +101,11 @@ class Sniffer(Thread):
       hexdump.hexdump(packet.load)
       sys.stdout.flush()
 
-  def _message_from_packet(self, packet):
+  def handle_message(self, message):
+    for h in self._handlers:
+      h(message)
+
+  def message_from_packet(self, packet):
     """
     :returns: Returns an instance of Message
     :raises:

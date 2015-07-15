@@ -27,7 +27,7 @@ import struct
 import sys
 
 from .client_message import ClientMessage, Request
-from .network import BadPacket, get_ip, get_ip_packet
+from .network import BadPacket, get_ip, get_ip_packet, SnifferBase
 from .server_message import Reply, ServerMessage, WatchEvent
 from .zookeeper import DeserializationError, OpCodes
 
@@ -116,7 +116,7 @@ debug = %s
           str(self.debug).lower())
 
 
-class Sniffer(Thread):
+class Sniffer(SnifferBase):
   class RegistrationError(Exception): pass
 
   def __init__(self,
@@ -203,15 +203,18 @@ class Sniffer(Thread):
 
   def handle_packet(self, packet):
     try:
-      message = self._message_from_packet(packet)
-      if not self.config.excluded(message.opcode):
-        for h in self._handlers_for(message):
-          h(message)
+      message = self.message_from_packet(packet)
+      self.handle_message(message)
     except (BadPacket, DeserializationError, struct.error) as ex:
       if self.config.dump_bad_packet:
         print("got: %s" % str(ex))
         hexdump.hexdump(packet.load)
         sys.stdout.flush()
+
+  def handle_message(self, message):
+    if not self.config.excluded(message.opcode):
+      for h in self._handlers_for(message):
+        h(message)
 
   def _handlers_for(self, message):
     if isinstance(message, Request):
@@ -225,7 +228,7 @@ class Sniffer(Thread):
 
     raise BadPacket("No handlers for: %s" % (message))
 
-  def _message_from_packet(self, packet):
+  def message_from_packet(self, packet):
     """
     :returns: Returns an instance of ClientMessage or ServerMessage (or a subclass)
     :raises:
