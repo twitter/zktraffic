@@ -1,6 +1,18 @@
 ChangeLog
 =========
 
+0.1.7 (2015-07-XX)
+--------------------
+
+Bug Handling
+************
+-
+
+Features
+********
+- zk-omni-dump: zk + fle + zab sniffer with automatic port detection. This
+  is useful for JUnit testcases where ports are randomly assigned
+
 0.1.6 (2015-07-10)
 --------------------
 
@@ -13,8 +25,6 @@ Features
 - zk-dump: add support for profiling latencies by path/type/client
 - zab-dump: don't print learner pings unless --include-pings
 - fle-dump/zab-dump: improved test coverage
-- zk-omni-dump: zk + fle + zab sniffer with automatic port detection. This
-  is useful for JUnit testcases where ports are randomly assigned
 
 0.1.5 (2015-06-22)
 --------------------
