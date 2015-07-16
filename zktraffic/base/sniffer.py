@@ -39,6 +39,13 @@ from twitter.common import log
 
 
 DEFAULT_PORT = 2181
+FOUR_LETTER_WORDS = (
+  'conf', 'cons', 'crst', 'dump', 'envi',
+  'ruok', 'srst', 'srvr', 'stat', 'wchs',
+  'wchc', 'wchp', 'mntr',
+  'kill',  # deprecated
+  'reqs'   # deprecated
+)
 
 
 class SnifferConfig(object):
@@ -140,6 +147,7 @@ class Sniffer(SnifferBase):
     self._reply_handlers = []
     self._event_handlers = []
     self._requests_xids = defaultdict(dict)  # if tracking replies, keep a tab for seen reqs
+    self._four_letter_mode = defaultdict(dict) # key: client addr, val: four letter
     self._wants_stop = False
 
     self.config = config
@@ -239,21 +247,29 @@ class Sniffer(SnifferBase):
     client_port = self.config.client_port
     zk_port = self.config.zookeeper_port
     ip_p = get_ip_packet(packet.load, client_port, zk_port, self.config.is_loopback)
+    data = ip_p.data.data
+    src = intern("%s:%s" % (get_ip(ip_p, ip_p.src), ip_p.data.sport))
+    dst = intern("%s:%s" % (get_ip(ip_p, ip_p.dst), ip_p.data.dport))
     timestamp = packet.time
 
     if ip_p.data.dport == zk_port:
-      client = intern("%s:%s" % (get_ip(ip_p, ip_p.src), ip_p.data.sport))
-      server = intern("%s:%s" % (get_ip(ip_p, ip_p.dst), zk_port))
-      client_message = ClientMessage.from_payload(ip_p.data.data, client, server)
+      client, server = src, dst
+      if data.startswith(FOUR_LETTER_WORDS):
+        self._set_four_letter_mode(client, data[0:4])
+        raise BadPacket("Four letter request %s" % data[0:4])
+      client_message = ClientMessage.from_payload(data, client, server)
       client_message.timestamp = timestamp
       self._track_client_message(client_message)
       return client_message
 
     if ip_p.data.sport == zk_port:
-      client = intern("%s:%s" % (get_ip(ip_p, ip_p.dst), ip_p.data.dport))
-      server = intern("%s:%s" % (get_ip(ip_p, ip_p.src), zk_port))
+      client, server = dst, src
+      four_letter = self._get_four_letter_mode(client)
+      if four_letter:
+        self._set_four_letter_mode(client, None)
+        raise BadPacket("Four letter response %s" % four_letter)
       requests_xids = self._requests_xids.get(client, {})
-      server_message = ServerMessage.from_payload(ip_p.data.data, client, server, requests_xids)
+      server_message = ServerMessage.from_payload(data, client, server, requests_xids)
       server_message.timestamp = timestamp
       return server_message
 
@@ -276,3 +292,15 @@ class Sniffer(SnifferBase):
         return
 
       requests_xids[request.xid] = request.opcode
+
+  def _get_four_letter_mode(self, client):
+    if client in self._four_letter_mode:
+        return self._four_letter_mode[client]
+    else:
+        return None
+
+  def _set_four_letter_mode(self, client, four_letter):
+    if four_letter:
+        self._four_letter_mode[client] = four_letter
+    else:
+        del self._four_letter_mode[client]
