@@ -392,8 +392,10 @@ $ pip install -r ./osx_requirements.txt
 * Python 2.7 (Py3K soon)
 * ansicolors
 * dpkt-fix
+* hexdump
 * psutil>=2.1.0
 * scapy==2.3.1
+* six
 * twitter.common.app
 * twitter.common.collections
 * twitter.common.exceptions

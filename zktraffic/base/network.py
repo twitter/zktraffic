@@ -21,7 +21,8 @@ import socket
 
 import dpkt
 
-from abc import abstractmethod
+from abc import ABCMeta, abstractmethod
+import six
 from threading import Thread
 
 class Error(Exception): pass
@@ -60,6 +61,7 @@ def get_ip(ip_packet, packed_addr):
   return socket.inet_ntop(af_type, packed_addr)
 
 
+@six.add_metaclass(ABCMeta)
 class SnifferBase(Thread):
   def __init__(self):
     super(SnifferBase, self).__init__()

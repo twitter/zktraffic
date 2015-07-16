@@ -1,8 +1,10 @@
 dpkt-fix
+hexdump
 mock
 nose
 psutil>=2.1.0
 scapy==2.3.1
+six
 tabulate
 twitter.common.app==0.3.3
 twitter.common.collections==0.3.3
@@ -10,4 +12,3 @@ twitter.common.decorators==0.3.3
 twitter.common.exceptions==0.3.3
 twitter.common.http==0.3.3
 twitter.common.log==0.3.3
-hexdump
