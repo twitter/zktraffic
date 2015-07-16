@@ -18,6 +18,7 @@
 # ==================================================================================================
 
 import sys
+import time
 
 from twitter.common import app
 from twitter.common.log.options import LogOptions
@@ -100,6 +101,15 @@ def main(_, options):
   except (KeyboardInterrupt, SystemExit):
     pass
 
+  # consume all messages
+  while not printer.empty or not zk_printer.empty:
+    time.sleep(0.0001)
+
+  # stop it
+  printer.stop()
+  zk_printer.stop()
+  while not printer.stopped or not zk_printer.stopped:
+    time.sleep(0.0001)
 
 if __name__ == '__main__':
   setup()
