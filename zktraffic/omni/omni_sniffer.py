@@ -181,7 +181,7 @@ class OmniSniffer(SnifferBase):
     if proto != FLE.Initial.PROTO_VER: return False
 
     server_id, offset = read_long(data, offset)
-    if server_id < 0 or server_id > 256: return False
+    if server_id < 0: return False
 
     election_addr, offset = read_string(data, offset)
     if election_addr.count(":") != 1: return False
