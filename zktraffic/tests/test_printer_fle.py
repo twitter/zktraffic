@@ -47,6 +47,7 @@ def test_fle():
     zxid=0x100,
     peer_epoch=0x1,
     election_epoch=0x1,
+    version=2,
     config="config"
   )
 

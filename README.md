@@ -280,7 +280,8 @@ Notification(
 ```
 
 Note: for initial messages to be visible you'll need the patch available
-at [ZOOKEEPER-2098](https://issues.apache.org/jira/browse/ZOOKEEPER-2098 "ZOOKEEPER-2098").
+at [ZOOKEEPER-2098](https://issues.apache.org/jira/browse/ZOOKEEPER-2098 "ZOOKEEPER-2098"),
+if you are using ZooKeeper prior to ZooKeeper 3.5.1-rc2.
 
 If you are interested in debugging ZAB (ZooKeeper Atomic Broadcast protocol), you can use
 zab-dump:
@@ -391,8 +392,10 @@ $ pip install -r ./osx_requirements.txt
 * Python 2.7 (Py3K soon)
 * ansicolors
 * dpkt-fix
+* hexdump
 * psutil>=2.1.0
 * scapy==2.3.1
+* six
 * twitter.common.app
 * twitter.common.collections
 * twitter.common.exceptions

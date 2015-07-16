@@ -21,6 +21,9 @@ import socket
 
 import dpkt
 
+from abc import ABCMeta, abstractmethod
+import six
+from threading import Thread
 
 class Error(Exception): pass
 class BadPacket(Error): pass
@@ -29,11 +32,11 @@ class BadPacket(Error): pass
 _loopback = dpkt.loopback.Loopback()
 _ethernet = dpkt.ethernet.Ethernet()
 
-def get_ip_packet(data, client_port, server_port, is_loopback=False):
-  """ if client_port is 0 any client_port is good """
+def get_ip_packet(data, client_port=0, server_port=0, is_loopback=False):
+
+  """ if {client,server}_port is 0 any {client,server}_port is good """
 
   header = _loopback if is_loopback else _ethernet
-
   header.unpack(data)
 
   tcp_p = getattr(header.data, "data", None)
@@ -47,7 +50,8 @@ def get_ip_packet(data, client_port, server_port, is_loopback=False):
     if client_port != 0 and tcp_p.dport != client_port:
       raise BadPacket("Reply for different client")
   else:
-    raise BadPacket("Packet not for/from client/server")
+    if server_port > 0:
+      raise BadPacket("Packet not for/from client/server")
 
   return header.data
 
@@ -55,3 +59,21 @@ def get_ip_packet(data, client_port, server_port, is_loopback=False):
 def get_ip(ip_packet, packed_addr):
   af_type = socket.AF_INET if type(ip_packet) == dpkt.ip.IP else socket.AF_INET6
   return socket.inet_ntop(af_type, packed_addr)
+
+
+@six.add_metaclass(ABCMeta)
+class SnifferBase(Thread):
+  def __init__(self):
+    super(SnifferBase, self).__init__()
+
+  @abstractmethod
+  def handle_packet(self, packet):
+    pass
+
+  @abstractmethod
+  def handle_message(self, message):
+    pass
+
+  @abstractmethod
+  def message_from_packet(self, packet):
+    pass
