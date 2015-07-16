@@ -45,6 +45,7 @@ class MessagesTestCase(unittest.TestCase):
     self.assertEqual(0x2000, notif.zxid)
     self.assertEqual(10, notif.election_epoch)
     self.assertEqual(-1, notif.peer_epoch)
+    self.assertEqual(0, notif.version)
     self.assertEqual('', notif.config)
 
   def test_notification_36(self):
@@ -61,9 +62,10 @@ class MessagesTestCase(unittest.TestCase):
     self.assertEqual(0x2000, notif.zxid)
     self.assertEqual(10, notif.election_epoch)
     self.assertEqual(10, notif.peer_epoch)
+    self.assertEqual(0, notif.version)
     self.assertEqual('', notif.config)
 
-  def test_notification_with_config(self):
+  def test_notification_v1(self):
     config = '%s\n%s\n%s\n%s' % (
       'server.0=10.0.0.1:2889:3888:participant;0.0.0.0:2181',
       'server.0=10.0.0.2:2889:3888:participant;0.0.0.0:2181',
@@ -76,7 +78,32 @@ class MessagesTestCase(unittest.TestCase):
       '\x00\x00\x00\x00\x00\x00\x20\x00',  # zxid
       '\x00\x00\x00\x00\x00\x00\x00\x0a',  # election epoch
       '\x00\x00\x00\x00\x00\x00\x00\x0a',  # peer epoch
-      '\x00\x00\x00\x02',                  # current version
+      '\x00\x00\x00\x01',                  # version
+      config,
+    ))
+    notif = Message.from_payload(payload, '127.0.0.1:3888', '127.0.0.1:9000', 0)
+    self.assertEqual(1, notif.state)
+    self.assertEqual(3, notif.leader)
+    self.assertEqual(0x2000, notif.zxid)
+    self.assertEqual(10, notif.election_epoch)
+    self.assertEqual(10, notif.peer_epoch)
+    self.assertEqual(1, notif.version)
+    self.assertEqual('', notif.config)
+
+  def test_notification_v2_with_config(self):
+    config = '%s\n%s\n%s\n%s' % (
+      'server.0=10.0.0.1:2889:3888:participant;0.0.0.0:2181',
+      'server.0=10.0.0.2:2889:3888:participant;0.0.0.0:2181',
+      'server.0=10.0.0.3:2889:3888:participant;0.0.0.0:2181',
+      'version=deadbeef'
+    )
+    payload = ''.join((
+      '\x00\x00\x00\x01',                  # state
+      '\x00\x00\x00\x00\x00\x00\x00\x03',  # leader
+      '\x00\x00\x00\x00\x00\x00\x20\x00',  # zxid
+      '\x00\x00\x00\x00\x00\x00\x00\x0a',  # election epoch
+      '\x00\x00\x00\x00\x00\x00\x00\x0a',  # peer epoch
+      '\x00\x00\x00\x02',                  # version
       '\x00\x00\x00\xaf',                  # config length
       config,
     ))
@@ -86,6 +113,7 @@ class MessagesTestCase(unittest.TestCase):
     self.assertEqual(0x2000, notif.zxid)
     self.assertEqual(10, notif.election_epoch)
     self.assertEqual(10, notif.peer_epoch)
+    self.assertEqual(2, notif.version)
     self.assertEqual(config, notif.config)
 
   def test_invalid_state(self):

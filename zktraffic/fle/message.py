@@ -45,7 +45,7 @@ class PeerState(object):
 class Message(object):
   PROTO_VER = -65536
   OLD_LEN = 28
-  WITH_CONFIG_LEN = 36
+  WITH_VERSION_LEN = 36
 
   __slots__ = ()
 
@@ -70,12 +70,12 @@ class Message(object):
       zxid, offset = read_long(data, offset)
       election_epoch, offset = read_long(data, offset)
       peer_epoch, offset = read_long(data, offset) if len(data) > cls.OLD_LEN else (-1, offset)
+      version = 0
       config = ""
-      if len(data) > cls.WITH_CONFIG_LEN:
-        currentversion, offset = read_number(data, offset)
-        if currentversion != Notification.CURRENTVERSION:
-          raise BadPacket("Invalid CURRENTVERSION: %d", currentversion)
-        config, _ = read_string(data, offset)
+      if len(data) > cls.WITH_VERSION_LEN:
+        version, offset = read_number(data, offset)
+        if version == 2:
+          config, _ = read_string(data, offset)
 
       return Notification(
         timestamp,
@@ -86,6 +86,7 @@ class Message(object):
         zxid,
         election_epoch,
         peer_epoch,
+        version,
         config
       )
 
@@ -118,8 +119,6 @@ class Initial(Message):
 
 
 class Notification(Message):
-  CURRENTVERSION = 0x2
-
   __slots__ = (
     "timestamp",
     "src",
@@ -129,10 +128,11 @@ class Notification(Message):
     "zxid",
     "election_epoch",
     "peer_epoch",
+    "version",
     "config"
   )
 
-  def __init__(self, timestamp, src, dst, state, leader, zxid, election_epoch, peer_epoch, config):
+  def __init__(self, timestamp, src, dst, state, leader, zxid, election_epoch, peer_epoch, version, config):
     self.timestamp = timestamp
     self.src = src
     self.dst = dst
@@ -141,6 +141,7 @@ class Notification(Message):
     self.zxid = zxid
     self.election_epoch = election_epoch
     self.peer_epoch = peer_epoch
+    self.version = version
     self.config = config
 
   @property
@@ -149,7 +150,7 @@ class Notification(Message):
 
   def __str__(self):
     config = [" " * 10 + cline for cline in self.config.split("\n")]
-    return "%s(\n%s=%s,\n%s=%s,\n%s=%s,\n%s=%s,\n%s=%s,\n%s=%s,\n%s=%s,\n%s=%s,\n%s=\n%s\n)\n" % (
+    return "%s(\n%s=%s,\n%s=%s,\n%s=%s,\n%s=%s,\n%s=%s,\n%s=%s,\n%s=%s,\n%s=%s,\n%s=%s,\n%s=\n%s\n)\n" % (
       "Notification",
       " " * 5 + "timestamp", self.timestr,
       " " * 5 + "src", self.src,
@@ -159,5 +160,6 @@ class Notification(Message):
       " " * 5 + "zxid", self.zxid,
       " " * 5 + "election_epoch", self.election_epoch,
       " " * 5 + "peer_epoch", self.peer_epoch,
+      " " * 5 + "version", self.version,
       " " * 5 + "config", "\n".join(config),
     )
