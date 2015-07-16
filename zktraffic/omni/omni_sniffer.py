@@ -248,7 +248,7 @@ class OmniSniffer(SnifferBase):
       sniffer = self.zk_sniffer_factory(port)
     else:
       raise ValueError('Unknown sniffer type %s' % type)
-    print 'OMNI DUMP REGISTERED SNIFFER %s(%s) (%s,%d)' % (sniffer, type, ip, port)
+    print('OMNI DUMP REGISTERED SNIFFER %s(%s) (%s,%d)' % (sniffer, type, ip, port))
     self._sniffers[(ip, port)] = sniffer
 
   def _get_sniffer_type(self, sniffer):

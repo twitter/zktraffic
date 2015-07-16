@@ -69,7 +69,7 @@ class OmniTestCase(unittest.TestCase):
     for i, packet in enumerate(packets):
       try:
         message = sniffer.message_from_packet(packet)
-        print 'TEST OMNI DUMP MESSAGE(%d): %s' % (i, message)
+        print ('TEST OMNI DUMP MESSAGE(%d): %s' % (i, message))
         if i in self.PCAP_MESSAGES:
           self.assertIsInstance(message, self.PCAP_MESSAGES[i])
       except (BadPacket, struct.error) as ex:
