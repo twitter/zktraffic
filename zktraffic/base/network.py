@@ -67,13 +67,13 @@ class SnifferBase(Thread):
     super(SnifferBase, self).__init__()
 
   @abstractmethod
-  def handle_packet(self, packet):
+  def handle_packet(self, packet):  # pragma: no cover
     pass
 
   @abstractmethod
-  def handle_message(self, message):
+  def handle_message(self, message):  # pragma: no cover
     pass
 
   @abstractmethod
-  def message_from_packet(self, packet):
+  def message_from_packet(self, packet):  # pragma: no cover
     pass
