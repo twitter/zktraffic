@@ -155,3 +155,10 @@ def _test_requests_replies(pcap_name, request_cls, reply_cls, nreqs, nreps):
   assert len(replies) == nreps
 
   sniffer.stop()
+
+def test_four_letter():
+  sniffer, stats = default_sniffer()
+  consume_packets('get_children_with_four_letter', sniffer)  # stat(4l), ConnectRequest, GetChildrenRequest, and conf(4l)
+
+  assert stats._cur_stats["ConnectRequest"][""] == 1
+  assert stats._cur_stats["GetChildrenRequest"]["/"] == 1
