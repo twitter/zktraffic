@@ -23,6 +23,7 @@ from zktraffic.base.process import ProcessOptions
 
 import psutil
 
+from .common import is_ci_env
 
 proc = ProcessOptions()
 
@@ -52,7 +53,7 @@ def test_cpu_affinity():
 
   # if running in TravisCI, or on OS X without CPI affinty,
   # mock the cpu_affinity() method call
-  if os.environ.get('TRAVIS') or sys.platform.startswith('darwin'):
+  if is_ci_env() or sys.platform.startswith('darwin'):
       with mock.patch.object(psutil.Process, 'cpu_affinity', create=True, new=mock_cpu_affinity_handler):
           proc.set_cpu_affinity('0,1')
           assert proc.cpu_affinity == [0, 1]
