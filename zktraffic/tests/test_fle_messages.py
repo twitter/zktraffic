@@ -66,12 +66,6 @@ class MessagesTestCase(unittest.TestCase):
     self.assertEqual('', notif.config)
 
   def test_notification_v1(self):
-    config = '%s\n%s\n%s\n%s' % (
-      'server.0=10.0.0.1:2889:3888:participant;0.0.0.0:2181',
-      'server.0=10.0.0.2:2889:3888:participant;0.0.0.0:2181',
-      'server.0=10.0.0.3:2889:3888:participant;0.0.0.0:2181',
-      'version=deadbeef'
-    )
     payload = ''.join((
       '\x00\x00\x00\x01',                  # state
       '\x00\x00\x00\x00\x00\x00\x00\x03',  # leader
@@ -79,7 +73,6 @@ class MessagesTestCase(unittest.TestCase):
       '\x00\x00\x00\x00\x00\x00\x00\x0a',  # election epoch
       '\x00\x00\x00\x00\x00\x00\x00\x0a',  # peer epoch
       '\x00\x00\x00\x01',                  # version
-      config,
     ))
     notif = Message.from_payload(payload, '127.0.0.1:3888', '127.0.0.1:9000', 0)
     self.assertEqual(1, notif.state)

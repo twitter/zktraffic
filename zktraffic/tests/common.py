@@ -32,3 +32,12 @@ def get_full_path(name):
 
 def consume_packets(capture_file, sniffer):
   sniff(offline=get_full_path(capture_file), prn=sniffer.handle_packet)
+
+def is_ci_env():
+  # Travis CI: CI=true, TRAVIS=true
+  # Circle CI: CI=true, CIRCLECI=true
+  # Drone: CI=true, DRONE=true
+  # Wercker: CI=true
+  # Semaphore: CI=true, SEMAPHORE=true
+  # Shippable: USER=shippable
+  return os.environ.get('CI') or os.environ.get('USER') == 'shippable'

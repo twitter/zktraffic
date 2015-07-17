@@ -30,7 +30,8 @@ from zktraffic.zab.quorum_packet import (
   Proposal,
   QuorumPacket,
   Request,
-  Revalidate
+  Revalidate,
+  Snap
 )
 
 from .common import get_full_path
@@ -188,3 +189,15 @@ class ZabTestCase(unittest.TestCase):
     assert informandactivates[0].session_id_literal == "0x34e8105a7540000"
     assert informandactivates[0].txn_type == OpCodes.RECONFIG
     assert informandactivates[0].zxid_literal == "0x100000006"
+
+  def test_snap(self):
+    snaps = []
+
+    def handler(message):
+        if isinstance(message, Snap):
+            snaps.append(message)
+
+    run_sniffer(handler, "omni", port=2781)
+
+    assert len(snaps) == 1
+    assert snaps[0].zxid_literal == "0x100000000"

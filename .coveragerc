@@ -2,6 +2,10 @@
 omit =
     */python?.?/*
     */site-packages/nose/*
+    zktraffic/cli/fle.py
+    zktraffic/cli/omni.py
+    zktraffic/cli/stats_daemon.py
+    zktraffic/cli/zab.py
     zktraffic/cli/zk.py
 exclude_lines =
     pragma: no cover

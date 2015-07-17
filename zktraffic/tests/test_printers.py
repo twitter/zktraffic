@@ -58,16 +58,16 @@ def _test(printer_cls):
 
   # wait for expected requests, replies & events
   expected = [13, 13, 1]
-  while [printer.seen_requests, printer.seen_replies, printer.seen_events] != expected:
+  while [printer.seen_requests, printer.seen_replies, printer.seen_events] != expected:  # pragma: no cover
     time.sleep(0.001)
 
   # wait for queues to be empty
-  while not printer.empty:
+  while not printer.empty:  # pragma: no cover
     time.sleep(0.001)
 
   # stop the printer
   printer.stop()
-  while not printer.stopped:
+  while not printer.stopped:  # pragma: no cover
     time.sleep(0.001)
 
   assert "PingRequest(client=127.0.0.1:60446)" in output.getvalue()
@@ -91,16 +91,16 @@ def test_default_printer_close_reqs():
 
   # 3 connect requests + 3 close requests
   expected = [6, 0, 0]
-  while [printer.seen_requests, printer.seen_replies, printer.seen_events] != expected:
+  while [printer.seen_requests, printer.seen_replies, printer.seen_events] != expected:  # pragma: no cover
     time.sleep(0.001)
 
   # wait for queues to be empty
-  while not printer.empty:
+  while not printer.empty:  # pragma: no cover
     time.sleep(0.001)
 
   # stop the printer
   printer.stop()
-  while not printer.stopped:
+  while not printer.stopped:  # pragma: no cover
     time.sleep(0.001)
 
   assert "ConnectRequest" in output.getvalue()
@@ -126,7 +126,7 @@ def test_count_printer():
   sniffer = get_sniffer(printer)
   consume_packets('dump', sniffer)
 
-  while not printer.stopped:
+  while not printer.stopped:  # pragma: no cover
     time.sleep(0.001)
 
   assert "ExistsRequest 5" in output.getvalue()
@@ -138,7 +138,7 @@ def test_count_printer():
   assert "SetDataRequest 1" in output.getvalue()
 
 
-def test_count_printer():
+def test_count_printer_group_by_client():
   output = StringIO()
 
   printer = CountPrinter(
@@ -153,7 +153,7 @@ def test_count_printer():
   sniffer = get_sniffer(printer)
   consume_packets('dump', sniffer)
 
-  while not printer.stopped:
+  while not printer.stopped:  # pragma: no cover
     time.sleep(0.001)
 
   assert "127.0.0.1:60446 14" in output.getvalue()
@@ -176,7 +176,7 @@ def test_latency_printer():
   sniffer = get_sniffer(printer)
   consume_packets('dump', sniffer)
 
-  while not printer.stopped:
+  while not printer.stopped:  # pragma: no cover
     time.sleep(0.001)
 
   # this is pretty primitive matching, since we are not mocking the timestamps
