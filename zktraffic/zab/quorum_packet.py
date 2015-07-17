@@ -320,6 +320,8 @@ class Diff(QuorumPacket):
 class Trunc(QuorumPacket):
   PTYPE = PacketType.TRUNC
 
+class Snap(QuorumPacket):
+  PTYPE = PacketType.SNAP
 
 class ObserverInfo(FollowerInfo):
   PTYPE = PacketType.OBSERVERINFO
