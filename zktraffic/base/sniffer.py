@@ -147,7 +147,7 @@ class Sniffer(SnifferBase):
     self._reply_handlers = []
     self._event_handlers = []
     self._requests_xids = defaultdict(dict)  # if tracking replies, keep a tab for seen reqs
-    self._four_letter_mode = defaultdict(dict) # key: client addr, val: four letter
+    self._four_letter_mode = {}              # key: client addr, val: four letter
     self._wants_stop = False
 
     self.config = config
@@ -294,10 +294,7 @@ class Sniffer(SnifferBase):
       requests_xids[request.xid] = request.opcode
 
   def _get_four_letter_mode(self, client):
-    if client in self._four_letter_mode:
-        return self._four_letter_mode[client]
-    else:
-        return None
+    return self._four_letter_mode.get(client)
 
   def _set_four_letter_mode(self, client, four_letter):
     if four_letter:
