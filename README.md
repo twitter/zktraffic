@@ -283,6 +283,8 @@ Note: for initial messages to be visible you'll need the patch available
 at [ZOOKEEPER-2098](https://issues.apache.org/jira/browse/ZOOKEEPER-2098 "ZOOKEEPER-2098"),
 if you are using ZooKeeper prior to ZooKeeper 3.5.1-rc2.
 
+Note: if you are using Linux 3.14 or later, you'll need to disable [TCP Auto Corking](http://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/commit/?id=f54b311142a92ea2e42598e347b84e1655caf8e3) by running `echo 0 > /proc/sys/net/ipv4/tcp_autocorking`.
+
 If you are interested in debugging ZAB (ZooKeeper Atomic Broadcast protocol), you can use
 zab-dump:
 
