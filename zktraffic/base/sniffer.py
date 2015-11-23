@@ -214,7 +214,7 @@ class Sniffer(SnifferBase):
     try:
       message = self.message_from_packet(packet)
       self.handle_message(message)
-    except (BadPacket, StringTooLong, DeserializationError, struct.error, S) as ex:
+    except (BadPacket, StringTooLong, DeserializationError, struct.error) as ex:
       if self.config.dump_bad_packet:
         print("got: %s" % str(ex))
         hexdump.hexdump(packet.load)
