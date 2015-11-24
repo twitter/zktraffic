@@ -30,6 +30,7 @@ from .client_message import ClientMessage, Request
 from .network import BadPacket, get_ip, get_ip_packet, SnifferBase
 from .server_message import Reply, ServerMessage, WatchEvent
 from .zookeeper import DeserializationError, OpCodes
+from .util import StringTooLong
 
 from scapy.config import conf as scapy_conf
 scapy_conf.logLevel = logging.ERROR  # shush scapy
@@ -213,7 +214,7 @@ class Sniffer(SnifferBase):
     try:
       message = self.message_from_packet(packet)
       self.handle_message(message)
-    except (BadPacket, DeserializationError, struct.error) as ex:
+    except (BadPacket, StringTooLong, DeserializationError, struct.error) as ex:
       if self.config.dump_bad_packet:
         print("got: %s" % str(ex))
         hexdump.hexdump(packet.load)
