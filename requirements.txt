@@ -1,3 +1,4 @@
+ansicolors
 dpkt-fix
 hexdump
 mock

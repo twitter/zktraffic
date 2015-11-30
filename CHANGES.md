@@ -6,7 +6,7 @@ ChangeLog
 
 Bug Handling
 ************
--
+- add ansicolors to requirements
 
 Features
 ********
