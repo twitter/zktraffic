@@ -101,6 +101,15 @@ def main(_, opts):
     sys.stdout.write("%s\n" % __version__)
     sys.exit(0)
 
+  # set proc options before we spawn threads
+  process = ProcessOptions()
+
+  if opts.niceness >= 0:
+    process.set_niceness(opts.niceness)
+
+  if opts.cpu_affinity:
+    process.set_cpu_affinity(opts.cpu_affinity)
+
   stats = StatsServer(opts.iface,
                       opts.zookeeper_port,
                       opts.aggregation_depth,
@@ -112,14 +121,6 @@ def main(_, opts):
   log.info("Starting with opts: %s" % (opts))
 
   signal.signal(signal.SIGINT, signal.SIG_DFL)
-
-  process = ProcessOptions()
-
-  if opts.niceness >= 0:
-    process.set_niceness(opts.niceness)
-
-  if opts.cpu_affinity:
-    process.set_cpu_affinity(opts.cpu_affinity)
 
   server = Server()
   server.mount_routes(DiagnosticsEndpoints())
