@@ -7,6 +7,9 @@ ChangeLog
 Bug Handling
 ************
 - add ansicolors to requirements
+- --set-cpu-affinity wasn't effective on all threads,
+  because set_cpu_affinity() was called after spawning
+  daemon threads
 
 Features
 ********
