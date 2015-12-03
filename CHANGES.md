@@ -1,7 +1,7 @@
 ChangeLog
 =========
 
-0.1.7 (2015-07-XX)
+0.1.7 (2015-12-XX)
 --------------------
 
 Bug Handling
@@ -15,6 +15,8 @@ Features
 ********
 - zk-omni-dump: zk + fle + zab sniffer with automatic port detection. This
   is useful for JUnit testcases where ports are randomly assigned
+- zk-stats-daemon now supports --sampling to capture only a % of packets,
+  which is useful to reduce the amount of consumed CPU time
 
 0.1.6 (2015-07-10)
 --------------------

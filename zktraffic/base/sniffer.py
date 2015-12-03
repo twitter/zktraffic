@@ -16,6 +16,7 @@
 
 
 from collections import defaultdict
+from random import random
 from threading import Thread
 
 import logging
@@ -69,6 +70,7 @@ class SnifferConfig(object):
     self.is_loopback = False
     self.read_timeout_ms = 0
     self.dump_bad_packet = False
+    self.sampling = 1.0  # percentage of packets to inspect [0, 1]
 
     # These are set after initialization, and require `update_filter` to be called
     self.included_ips = []
@@ -211,6 +213,10 @@ class Sniffer(SnifferBase):
       os.kill(os.getpid(), signal.SIGINT)
 
   def handle_packet(self, packet):
+    sampling = self.config.sampling
+    if sampling < 1.0 and random() > sampling:
+      return
+
     try:
       message = self.message_from_packet(packet)
       self.handle_message(message)
@@ -248,22 +254,24 @@ class Sniffer(SnifferBase):
     client_port = self.config.client_port
     zk_port = self.config.zookeeper_port
     ip_p = get_ip_packet(packet.load, client_port, zk_port, self.config.is_loopback)
-    data = ip_p.data.data
-    src = intern("%s:%s" % (get_ip(ip_p, ip_p.src), ip_p.data.sport))
-    dst = intern("%s:%s" % (get_ip(ip_p, ip_p.dst), ip_p.data.dport))
-    timestamp = packet.time
 
     if ip_p.data.dport == zk_port:
+      data = ip_p.data.data
+      src = intern("%s:%s" % (get_ip(ip_p, ip_p.src), ip_p.data.sport))
+      dst = intern("%s:%s" % (get_ip(ip_p, ip_p.dst), ip_p.data.dport))
       client, server = src, dst
       if data.startswith(FOUR_LETTER_WORDS):
         self._set_four_letter_mode(client, data[0:4])
         raise BadPacket("Four letter request %s" % data[0:4])
       client_message = ClientMessage.from_payload(data, client, server)
-      client_message.timestamp = timestamp
+      client_message.timestamp = packet.time
       self._track_client_message(client_message)
       return client_message
 
     if ip_p.data.sport == zk_port:
+      data = ip_p.data.data
+      src = intern("%s:%s" % (get_ip(ip_p, ip_p.src), ip_p.data.sport))
+      dst = intern("%s:%s" % (get_ip(ip_p, ip_p.dst), ip_p.data.dport))
       client, server = dst, src
       four_letter = self._get_four_letter_mode(client)
       if four_letter:
@@ -271,7 +279,7 @@ class Sniffer(SnifferBase):
         raise BadPacket("Four letter response %s" % four_letter)
       requests_xids = self._requests_xids.get(client, {})
       server_message = ServerMessage.from_payload(data, client, server, requests_xids)
-      server_message.timestamp = timestamp
+      server_message.timestamp = packet.time
       return server_message
 
     raise BadPacket("Packet to the wrong port?")

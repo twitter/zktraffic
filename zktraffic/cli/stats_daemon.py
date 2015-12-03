@@ -76,6 +76,10 @@ def setup():
                  type=str,
                  default=None,
                  help="A comma-separated list of CPU cores to pin this process to")
+  app.add_option("--sampling",
+                 type=float,
+                 default=1.0,
+                 help="Percentage of packets to inspect [0, 1]")
   app.add_option("--max-queued-requests",
                  type=int,
                  default=400000,
@@ -110,13 +114,18 @@ def main(_, opts):
   if opts.cpu_affinity:
     process.set_cpu_affinity(opts.cpu_affinity)
 
+  if opts.sampling < 0 or opts.sampling > 1:
+    sys.stdout.write("--sampling takes values within [0, 1]\n")
+    sys.exit(1)
+
   stats = StatsServer(opts.iface,
                       opts.zookeeper_port,
                       opts.aggregation_depth,
                       opts.max_results,
                       opts.max_queued_requests,
                       opts.max_queued_replies,
-                      opts.max_queued_events)
+                      opts.max_queued_events,
+                      sampling=opts.sampling)
 
   log.info("Starting with opts: %s" % (opts))
 
@@ -127,8 +136,7 @@ def main(_, opts):
   server.mount_routes(stats)
   server.run(opts.http_addr, opts.http_port)
 
-  while True:
-    time.sleep(10)
+  stats.sniffer.join()
 
 
 if __name__ == '__main__':

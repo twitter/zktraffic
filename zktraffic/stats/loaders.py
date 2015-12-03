@@ -24,6 +24,8 @@ stats handler.
 from collections import defaultdict
 from threading import Condition
 
+import time
+
 from zktraffic.base.deque import Deque
 
 from .timer import Timer
@@ -90,10 +92,8 @@ class QueueStatsLoader(ExceptionalThread):
           accumulator.accumulate_stats()
         self._timer.reset()
 
-      # wait for new requests/replies/events
-      with self._cv:
-        if not any((self._requests, self._replies, self._events)):
-          self._cv.wait(1.0)
+      # no need to wake up immediately to process the new packets
+      time.sleep(1)
 
   def _process_queue(self, queue, handlers):
     while True:
@@ -126,14 +126,12 @@ class QueueStatsLoader(ExceptionalThread):
 
   def add_to_queue(self, queue, item, label):
     """ queue items send to us by the sniffer """
-    with self._cv:
-      count = len(queue)
-      if count > queue.maxlength():  # pragma: no cover
-        log.warn("Too many %s queued (%d)", label, count)
-        return
+    count = len(queue)
+    if count > queue.maxlength():  # pragma: no cover
+      log.warn("Too many %s queued (%d)", label, count)
+      return
 
-      queue.appendleft(item)
-      self._cv.notify()
+    queue.appendleft(item)
 
   def stats(self, name, top):
     return self._accumulators[name].stats(top)
