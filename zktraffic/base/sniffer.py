@@ -16,6 +16,7 @@
 
 
 from collections import defaultdict
+from random import random
 from threading import Thread
 
 import logging
@@ -69,6 +70,7 @@ class SnifferConfig(object):
     self.is_loopback = False
     self.read_timeout_ms = 0
     self.dump_bad_packet = False
+    self.sampling = 1.0  # percentage of packets to inspect [0, 1]
 
     # These are set after initialization, and require `update_filter` to be called
     self.included_ips = []
@@ -211,6 +213,10 @@ class Sniffer(SnifferBase):
       os.kill(os.getpid(), signal.SIGINT)
 
   def handle_packet(self, packet):
+    sampling = self.config.sampling
+    if sampling < 1.0 and random() > sampling:
+      return
+
     try:
       message = self.message_from_packet(packet)
       self.handle_message(message)

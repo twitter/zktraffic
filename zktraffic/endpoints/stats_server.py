@@ -40,7 +40,8 @@ class StatsServer(EndpointsServer):
                max_reps=400000,
                max_events=400000,
                start_sniffer=True,
-               timer=None):
+               timer=None,
+               sampling=1.0):
 
     # Forcing a load of the multiprocessing module here
     # seem to be hitting http://bugs.python.org/issue8200
@@ -62,7 +63,8 @@ class StatsServer(EndpointsServer):
       self._stats.handle_request,
       self._stats.handle_reply,
       self._stats.handle_event,
-      start_sniffer)
+      start_sniffer,
+      sampling=sampling)
 
   def wakeup(self):
     self._stats.wakeup()
