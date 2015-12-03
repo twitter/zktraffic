@@ -127,8 +127,7 @@ def main(_, opts):
   server.mount_routes(stats)
   server.run(opts.http_addr, opts.http_port)
 
-  while True:
-    time.sleep(10)
+  stats.sniffer.join()
 
 
 if __name__ == '__main__':
