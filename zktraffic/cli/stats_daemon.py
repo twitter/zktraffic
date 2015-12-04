@@ -92,6 +92,8 @@ def setup():
                  type=int,
                  default=400000,
                  help="max queued events")
+  app.add_option("--exclude-bytes", default=False, action='store_true',
+                 help="Exclude stats for bytes per path and request type")
   app.add_option('--version', default=False, action='store_true')
 
 
@@ -125,7 +127,8 @@ def main(_, opts):
                       opts.max_queued_requests,
                       opts.max_queued_replies,
                       opts.max_queued_events,
-                      sampling=opts.sampling)
+                      sampling=opts.sampling,
+                      include_bytes=not opts.exclude_bytes)
 
   log.info("Starting with opts: %s" % (opts))
 

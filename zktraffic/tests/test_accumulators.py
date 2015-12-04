@@ -45,9 +45,9 @@ class TestablePerPathAccumulator(PerPathStatsAccumulator):
 
 
 class TestableStatsLoader(object):
-  def __init__(self, aggregation_depth):
+  def __init__(self, aggregation_depth, include_bytes=True):
     self._loader = QueueStatsLoader()
-    self._accumulator = TestablePerPathAccumulator(aggregation_depth)
+    self._accumulator = TestablePerPathAccumulator(aggregation_depth, include_bytes)
     self._loader.register_accumulator('0', self._accumulator)
     self._loader.start()
 
@@ -208,5 +208,22 @@ def test_auth():
   cur_stats = stats.cur_stats
 
   assert cur_stats["SetAuthRequest"]["/tacos:tacos"] == 1
+
+  stats.stop()
+
+
+def test_exclude_bytes():
+  stats = TestableStatsLoader(aggregation_depth=1, include_bytes=False)
+  sniffer = get_sniffer(stats.handle_request)
+
+  wait_for_stats(
+    sniffer, "set_data", lambda: stats.processed_requests < NUMBER_OF_REQUESTS_SET_DATA)
+  cur_stats = stats.cur_stats
+
+  # there shouldn't be any *Bytes key
+  keys = cur_stats.keys()
+  assert len(keys) > 0
+  for key in keys:
+    assert "Bytes" not in key
 
   stats.stop()

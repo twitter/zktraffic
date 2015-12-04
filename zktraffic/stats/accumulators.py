@@ -31,9 +31,10 @@ class TopStatsAccumulator(object):
     """
 
     self._prev_stats = {}
-    self.init_cur_stats()
     self._aggregation_depth = aggregation_depth
     self._include_bytes = include_bytes
+
+    self.init_cur_stats()
 
   def update_request_stats(self, request):  # pragma: no cover
     raise NotImplementedError
