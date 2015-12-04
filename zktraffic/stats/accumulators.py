@@ -19,9 +19,8 @@
 Contains various accumulators that build stats into dictionary objects driven
 by input from the queued stats loader
 '''
-from collections import defaultdict
 
-from twitter.common import log
+from collections import defaultdict
 
 
 class TopStatsAccumulator(object):
@@ -45,7 +44,6 @@ class TopStatsAccumulator(object):
     raise NotImplementedError
 
   def accumulate_stats(self):
-    log.debug("Accumulating stats for accumulator %s ...", self.__class__.__name__)
     self._prev_stats = self._cur_stats
     self.init_cur_stats()
 
@@ -84,7 +82,6 @@ class TopStatsAccumulator(object):
 
   def _update_request_stats(self, path, request):
     """ here we actually update the stats for a given request """
-    log.debug("Request stats update : %s, %s", request.name, path)
     self._cur_stats[request.name][path] += 1
     self._cur_stats["%sBytes" % (request.name)][path] += request.size
     if request.is_write:
@@ -110,12 +107,10 @@ class PerPathStatsAccumulator(TopStatsAccumulator):
 
   def update_reply_stats(self, reply):
     path = self.get_path(reply)
-    log.debug("Reply stats update : %s, %s", reply.name, path)
     self._cur_stats[reply.name][path] += 1
 
   def update_event_stats(self, event):
     path = self.get_path(event)
-    log.debug("Event stats update : %s, %s", event.name, path)
     self._cur_stats[event.name][path] += 1
 
 
