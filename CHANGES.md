@@ -6,7 +6,7 @@ ChangeLog
 
 Bug Handling
 ************
--
+- treat empty ('') paths as /
 
 Features
 ********

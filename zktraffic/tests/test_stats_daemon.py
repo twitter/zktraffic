@@ -110,9 +110,9 @@ def test_endpoints():
   assert paths["ExistsRequestBytes/load-testing"] == 112
   assert paths["SetDataRequest/load-testing"] == 20
   assert paths["SetDataRequestBytes/load-testing"] == 10999
-  assert paths["reads"] == 12
+  assert paths["reads/"] == 12
   assert paths["reads/load-testing"] == 4
-  assert paths["readsBytes"] == 3046
+  assert paths["readsBytes/"] == 3046
   assert paths["readsBytes/load-testing"] == 112
   assert paths["total/readBytes"] == 3158
   assert paths["total/reads"] == 16

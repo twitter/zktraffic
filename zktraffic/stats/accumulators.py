@@ -86,6 +86,12 @@ class TopStatsAccumulator(object):
 
   def _update_request_stats(self, path, request):
     """ here we actually update the stats for a given request """
+
+    # things like Connect() don't have a path so for consistency treat it
+    # as /.
+    if not path:
+      path = '/'
+
     self._cur_stats[request.name][path] += 1
 
     if self._include_bytes:

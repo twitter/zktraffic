@@ -87,8 +87,8 @@ def test_connects():
   sniffer, stats = default_sniffer()
   consume_packets('connects', sniffer)
 
-  assert stats._cur_stats["ConnectRequest"][""] == 3
-  assert stats._cur_stats["CloseRequest"][""] == 3
+  assert stats._cur_stats["ConnectRequest"]["/"] == 3
+  assert stats._cur_stats["CloseRequest"]["/"] == 3
 
 
 def test_connect_replies():
@@ -158,7 +158,9 @@ def _test_requests_replies(pcap_name, request_cls, reply_cls, nreqs, nreps):
 
 def test_four_letter():
   sniffer, stats = default_sniffer()
-  consume_packets('get_children_with_four_letter', sniffer)  # stat(4l), ConnectRequest, GetChildrenRequest, and conf(4l)
 
-  assert stats._cur_stats["ConnectRequest"][""] == 1
+  # stat(4l), ConnectRequest, GetChildrenRequest, and conf(4l)
+  consume_packets('get_children_with_four_letter', sniffer)
+
+  assert stats._cur_stats["ConnectRequest"]["/"] == 1
   assert stats._cur_stats["GetChildrenRequest"]["/"] == 1
