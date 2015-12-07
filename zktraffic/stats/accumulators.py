@@ -19,21 +19,22 @@
 Contains various accumulators that build stats into dictionary objects driven
 by input from the queued stats loader
 '''
-from collections import defaultdict
 
-from twitter.common import log
+from collections import defaultdict
 
 
 class TopStatsAccumulator(object):
-  def __init__(self, aggregation_depth):
+  def __init__(self, aggregation_depth, include_bytes=True):
     """
     if aggregation_depth > 0 then we aggregate for paths up to that depth
     as a safety measure set a cap on the num of requests, replies & events
     """
 
     self._prev_stats = {}
-    self.init_cur_stats()
     self._aggregation_depth = aggregation_depth
+    self._include_bytes = include_bytes
+
+    self.init_cur_stats()
 
   def update_request_stats(self, request):  # pragma: no cover
     raise NotImplementedError
@@ -45,7 +46,6 @@ class TopStatsAccumulator(object):
     raise NotImplementedError
 
   def accumulate_stats(self):
-    log.debug("Accumulating stats for accumulator %s ...", self.__class__.__name__)
     self._prev_stats = self._cur_stats
     self.init_cur_stats()
 
@@ -53,13 +53,15 @@ class TopStatsAccumulator(object):
     """Initialize the _cur_stats dictionary with defaults to avoid no data issues"""
     self._cur_stats = defaultdict(lambda: defaultdict(int))
     self._cur_stats["writes"]["/"] = 0
-    self._cur_stats["writesBytes"]["/"] = 0
     self._cur_stats["reads"]["/"] = 0
-    self._cur_stats["readsBytes"]["/"] = 0
     self._cur_stats["total"]["/writes"] = 0
-    self._cur_stats["total"]["/writeBytes"] = 0
     self._cur_stats["total"]["/reads"] = 0
-    self._cur_stats["total"]["/readBytes"] = 0
+
+    if self._include_bytes:
+      self._cur_stats["writesBytes"]["/"] = 0
+      self._cur_stats["readsBytes"]["/"] = 0
+      self._cur_stats["total"]["/writeBytes"] = 0
+      self._cur_stats["total"]["/readBytes"] = 0
 
   def get_path(self, message, suffix=None):
     if self._aggregation_depth > 0 and message.path:
@@ -84,38 +86,46 @@ class TopStatsAccumulator(object):
 
   def _update_request_stats(self, path, request):
     """ here we actually update the stats for a given request """
-    log.debug("Request stats update : %s, %s", request.name, path)
+
+    # things like Connect() don't have a path so for consistency treat it
+    # as /.
+    if not path:
+      path = '/'
+
     self._cur_stats[request.name][path] += 1
-    self._cur_stats["%sBytes" % (request.name)][path] += request.size
+
+    if self._include_bytes:
+      self._cur_stats["%sBytes" % (request.name)][path] += request.size
+
     if request.is_write:
       self._cur_stats["writes"][path] += 1
-      self._cur_stats["writesBytes"][path] += request.size
       self._cur_stats["total"]["/writes"] += 1
-      self._cur_stats["total"]["/writeBytes"] += request.size
+
+      if self._include_bytes:
+        self._cur_stats["writesBytes"][path] += request.size
+        self._cur_stats["total"]["/writeBytes"] += request.size
     else:
       self._cur_stats["reads"][path] += 1
-      self._cur_stats["readsBytes"][path] += request.size
       self._cur_stats["total"]["/reads"] += 1
-      self._cur_stats["total"]["/readBytes"] += request.size
+
+      if self._include_bytes:
+        self._cur_stats["readsBytes"][path] += request.size
+        self._cur_stats["total"]["/readBytes"] += request.size
+
       if request.watch:
         self._cur_stats["watches"][path] += 1
 
 
 class PerPathStatsAccumulator(TopStatsAccumulator):
-  def __init__(self, aggregation_depth):
-    TopStatsAccumulator.__init__(self, aggregation_depth)
-
   def update_request_stats(self, request):
     self._update_request_stats(self.get_path(request), request)
 
   def update_reply_stats(self, reply):
     path = self.get_path(reply)
-    log.debug("Reply stats update : %s, %s", reply.name, path)
     self._cur_stats[reply.name][path] += 1
 
   def update_event_stats(self, event):
     path = self.get_path(event)
-    log.debug("Event stats update : %s, %s", event.name, path)
     self._cur_stats[event.name][path] += 1
 
 

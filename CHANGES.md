@@ -1,7 +1,19 @@
 ChangeLog
 =========
 
-0.1.7 (2015-12-XX)
+0.1.8 (2015-12-07)
+--------------------
+
+Bug Handling
+************
+- treat empty ('') paths as /
+
+Features
+********
+- zk-stats-daemon now supports --exclude-bytes, which
+  will skip accounting bytes per path and request type
+
+0.1.7 (2015-12-03)
 --------------------
 
 Bug Handling

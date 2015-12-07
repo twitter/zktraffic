@@ -41,7 +41,8 @@ class StatsServer(EndpointsServer):
                max_events=400000,
                start_sniffer=True,
                timer=None,
-               sampling=1.0):
+               sampling=1.0,
+               include_bytes=True):
 
     # Forcing a load of the multiprocessing module here
     # seem to be hitting http://bugs.python.org/issue8200
@@ -51,9 +52,12 @@ class StatsServer(EndpointsServer):
 
     self._stats = QueueStatsLoader(max_reqs, max_reps, max_events, timer)
 
-    self._stats.register_accumulator('per_path', PerPathStatsAccumulator(aggregation_depth))
-    self._stats.register_accumulator('per_ip', PerIPStatsAccumulator(aggregation_depth))
-    self._stats.register_accumulator('per_auth', PerAuthStatsAccumulator(aggregation_depth))
+    self._stats.register_accumulator(
+      'per_path', PerPathStatsAccumulator(aggregation_depth, include_bytes))
+    self._stats.register_accumulator(
+      'per_ip', PerIPStatsAccumulator(aggregation_depth, include_bytes))
+    self._stats.register_accumulator(
+      'per_auth', PerAuthStatsAccumulator(aggregation_depth, include_bytes))
 
     self._stats.start()
 
