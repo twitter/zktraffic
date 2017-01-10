@@ -67,7 +67,7 @@ class SnifferConfig(object):
     self.max_queued_requests = 10000
     self.zookeeper_port = DEFAULT_PORT
     self.excluded_opcodes = set()
-    self.is_loopback = False
+    self.is_loopback = iface in ["lo", "lo0"]
     self.read_timeout_ms = 0
     self.dump_bad_packet = False
     self.sampling = 1.0  # percentage of packets to inspect [0, 1]
@@ -227,7 +227,7 @@ class Sniffer(SnifferBase):
         sys.stdout.flush()
 
   def handle_message(self, message):
-    if not self.config.excluded(message.opcode):
+    if message and not self.config.excluded(message.opcode):
       for h in self._handlers_for(message):
         h(message)
 
@@ -254,6 +254,9 @@ class Sniffer(SnifferBase):
     client_port = self.config.client_port
     zk_port = self.config.zookeeper_port
     ip_p = get_ip_packet(packet.load, client_port, zk_port, self.config.is_loopback)
+
+    if 0 == len(ip_p.data.data):
+      return None
 
     if ip_p.data.dport == zk_port:
       data = ip_p.data.data
