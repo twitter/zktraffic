@@ -225,6 +225,11 @@ class Sniffer(SnifferBase):
         print("got: %s" % str(ex))
         hexdump.hexdump(packet.load)
         sys.stdout.flush()
+    except Exception as ex:
+      print("got: %s" % str(ex))
+      hexdump.hexdump(packet.load)
+      sys.stdout.flush()
+
 
   def handle_message(self, message):
     if message and not self.config.excluded(message.opcode):
