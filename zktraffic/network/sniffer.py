@@ -54,6 +54,7 @@ class Sniffer(SnifferBase):
     self._packet_size = MAX_PACKET_SIZE
     self._handlers = []
     self._dump_bad_packet = dump_bad_packet
+    self._is_loopback = iface in ["lo", "lo0"]
 
     if handler is not None:
       self.add_handler(handler)
@@ -90,7 +91,8 @@ class Sniffer(SnifferBase):
   def handle_packet(self, packet):
     try:
       message = self.message_from_packet(packet)
-      self.handle_message(message)
+      if message:
+        self.handle_message(message)
     except (BadPacket, struct.error) as ex:
       if self._dump_bad_packet:
         print("got: %s" % str(ex))
@@ -113,7 +115,10 @@ class Sniffer(SnifferBase):
       :exc:`DeserializationError` if deserialization failed
       :exc:`struct.error` if deserialization failed
     """
-    ip_p = get_ip_packet(packet.load, 0, self._port)
+    ip_p = get_ip_packet(packet.load, 0, self._port, self._is_loopback)
+    if 0 == len(ip_p.data.data):
+      return None
+
     if ip_p.data.sport != self._port and ip_p.data.dport != self._port:
       raise BadPacket("Wrong port")
 
