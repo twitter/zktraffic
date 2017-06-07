@@ -58,3 +58,6 @@ target/
 
 # PEX-files
 *.pex
+
+# PyCharm
+.idea
