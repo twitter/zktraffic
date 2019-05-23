@@ -43,11 +43,21 @@ from twitter.common import log
 
 DEFAULT_PORT = 2181
 FOUR_LETTER_WORDS = (
-  'conf', 'cons', 'crst', 'dump', 'envi',
-  'ruok', 'srst', 'srvr', 'stat', 'wchs',
-  'wchc', 'wchp', 'mntr',
-  'kill',  # deprecated
-  'reqs'   # deprecated
+  to_bytes('conf'),
+  to_bytes('cons'),
+  to_bytes('crst'),
+  to_bytes('dump'),
+  to_bytes('envi'),
+  to_bytes('ruok'),
+  to_bytes('srst'),
+  to_bytes('srvr'),
+  to_bytes('stat'),
+  to_bytes('wchs'),
+  to_bytes('wchc'),
+  to_bytes('wchp'),
+  to_bytes('mntr'),
+  to_bytes('kill'),  # deprecated
+  to_bytes('reqs'),  # deprecated
 )
 
 
@@ -260,7 +270,7 @@ class Sniffer(SnifferBase):
       return None
 
     if ip_p.data.dport == zk_port:
-      data = to_bytes(ip_p.data.data)
+      data = ip_p.data.data
       src = intern("%s:%s" % (get_ip(ip_p, ip_p.src), ip_p.data.sport))
       dst = intern("%s:%s" % (get_ip(ip_p, ip_p.dst), ip_p.data.dport))
       client, server = src, dst
@@ -273,7 +283,7 @@ class Sniffer(SnifferBase):
       return client_message
 
     if ip_p.data.sport == zk_port:
-      data = to_bytes(ip_p.data.data)
+      data = ip_p.data.data
       src = intern("%s:%s" % (get_ip(ip_p, ip_p.src), ip_p.data.sport))
       dst = intern("%s:%s" % (get_ip(ip_p, ip_p.dst), ip_p.data.dport))
       client, server = dst, src
