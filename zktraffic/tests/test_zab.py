@@ -42,7 +42,7 @@ LEADER_PORT = 20022
 
 def run_sniffer(handler, pcapfile, port=LEADER_PORT):
   sniffer = Sniffer(
-    iface="test",
+    iface=None,
     port=port,
     msg_cls=QuorumPacket,
     handler=handler,
