@@ -14,7 +14,6 @@
 # limitations under the License.
 # ==================================================================================================
 
-import httplib
 import json
 import socket
 import threading
@@ -28,6 +27,7 @@ from .common import consume_packets
 import bottle
 from twitter.common.http import HttpServer
 from twitter.common.http.diagnostics import DiagnosticsEndpoints
+from six.moves import http_client
 
 
 class FakeTimer(Timer):
@@ -88,7 +88,7 @@ def test_endpoints():
   else:
     raise Exception("server didn't come up")
 
-  conn = httplib.HTTPConnection("127.0.0.1:%d" % server_port)
+  conn = http_client.HTTPConnection("127.0.0.1:%d" % server_port)
   conn.request("GET", "/json/info")
   resp = conn.getresponse()
   assert resp.status == 200
