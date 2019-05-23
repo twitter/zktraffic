@@ -1,6 +1,6 @@
 -e git+https://github.com/CoreSecurity/pcapy.git@2984bf5e974ab3a2af58c0501f2d4072db5ac4e4#egg=pcapy-10.8
 dnet
-dpkt-fix
+dpkt==1.9.2
 hexdump
 mock
 nose

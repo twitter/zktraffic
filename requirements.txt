@@ -1,5 +1,5 @@
 ansicolors
-dpkt-fix
+dpkt==1.9.2
 hexdump
 mock
 nose
