@@ -5,6 +5,6 @@ hexdump
 mock
 nose
 psutil>=2.1.0
-scapy==2.3.1
+scapy==2.4.2
 six
 twitter.common.log==0.3.3
