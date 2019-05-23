@@ -31,7 +31,7 @@ from .client_message import ClientMessage, Request
 from .network import BadPacket, get_ip, get_ip_packet, SnifferBase
 from .server_message import Reply, ServerMessage, WatchEvent
 from .zookeeper import DeserializationError, OpCodes
-from .util import StringTooLong
+from .util import StringTooLong, to_bytes
 
 from scapy.config import conf as scapy_conf
 scapy_conf.logLevel = logging.ERROR  # shush scapy
@@ -260,7 +260,7 @@ class Sniffer(SnifferBase):
       return None
 
     if ip_p.data.dport == zk_port:
-      data = ip_p.data.data
+      data = to_bytes(ip_p.data.data)
       src = intern("%s:%s" % (get_ip(ip_p, ip_p.src), ip_p.data.sport))
       dst = intern("%s:%s" % (get_ip(ip_p, ip_p.dst), ip_p.data.dport))
       client, server = src, dst
@@ -273,7 +273,7 @@ class Sniffer(SnifferBase):
       return client_message
 
     if ip_p.data.sport == zk_port:
-      data = ip_p.data.data
+      data = to_bytes(ip_p.data.data)
       src = intern("%s:%s" % (get_ip(ip_p, ip_p.src), ip_p.data.sport))
       dst = intern("%s:%s" % (get_ip(ip_p, ip_p.dst), ip_p.data.dport))
       client, server = dst, src
