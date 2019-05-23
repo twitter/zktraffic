@@ -11,7 +11,7 @@ matrix:
       dist: xenial
       sudo: true
 install: 
-  - pip install -r requirements.txt --use-mirrors
+  - pip install -r requirements.txt
   - pip install coverage
   - pip install coveralls
 script: python setup.py nosetests --with-coverage --cover-package=zktraffic
