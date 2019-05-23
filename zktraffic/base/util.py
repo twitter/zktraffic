@@ -32,7 +32,22 @@ REPLY_HEADER_STRUCT = struct.Struct('!iqi')
 STAT_STRUCT = struct.Struct('!qqqqiiiqiiq')
 
 
+def to_bytes(value):
+    """ str to bytes (py3k) """
+    vtype = type(value)
+
+    if vtype == bytes or vtype == type(None):
+        return value
+
+    try:
+        return vtype.encode(value)
+    except UnicodeEncodeError:
+        pass
+    return value
+
+
 def read_number(data, offset):
+  data = to_bytes(data)
   try:
     return (INT_STRUCT.unpack_from(data, offset)[0], offset + INT_STRUCT.size)
   except struct.error:
@@ -40,6 +55,7 @@ def read_number(data, offset):
 
 
 def read_long(data, offset):
+  data = to_bytes(data)
   try:
     return (LONG_STRUCT.unpack_from(data, offset)[0], offset + LONG_STRUCT.size)
   except struct.error:
@@ -47,6 +63,7 @@ def read_long(data, offset):
 
 
 def read_bool(data, offset):
+  data = to_bytes(data)
   try:
     return (BOOL_STRUCT.unpack_from(data, offset)[0] is 1, offset + BOOL_STRUCT.size)
   except struct.error:
@@ -104,16 +121,19 @@ def read_buffer(data, offset, maxlen=1024):
 
 
 def read_int_bool_int(data, offset):
+  data = to_bytes(data)
   return (INT_BOOL_INT.unpack_from(data, offset),
           offset + INT_BOOL_INT.size)
 
 
 def read_int_long_int_long(data, offset):
+  data = to_bytes(data)
   return (INT_LONG_INT_LONG_STRUCT.unpack_from(data, offset),
           offset + INT_LONG_INT_LONG_STRUCT.size)
 
 
 def read_int_int_long(data, offset):
+  data = to_bytes(data)
   return (INT_INT_LONG_STRUCT.unpack_from(data, offset), offset + INT_INT_LONG_STRUCT.size)
 
 
@@ -122,6 +142,7 @@ def read_reply_header(data, offset):
 
 
 def read_int_int(data, offset):
+  data = to_bytes(data)
   return (INT_INT_STRUCT.unpack_from(data, offset), offset + INT_INT_STRUCT.size)
 
 
