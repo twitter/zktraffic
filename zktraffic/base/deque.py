@@ -20,7 +20,7 @@ from collections import deque
 
 class Deque(deque):
   def __init__(self, iterable=(), maxlen=None):
-    super(deque, self).__init__(iterable, maxlen)
+    super(Deque, self).__init__(iterable, maxlen)
     self._maxlen = maxlen
 
   def maxlength(self):
