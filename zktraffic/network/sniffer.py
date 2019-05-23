@@ -30,6 +30,7 @@ from zktraffic.base.network import BadPacket, get_ip, get_ip_packet, SnifferBase
 
 from scapy.sendrecv import sniff
 from scapy.config import conf as scapy_conf
+from six.moves import intern
 
 
 scapy_conf.logLevel = logging.ERROR  # shush scappy

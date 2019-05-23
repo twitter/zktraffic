@@ -17,8 +17,8 @@
 
 """ helpers """
 
-import struct
 import re
+import struct
 
 
 INT_STRUCT = struct.Struct('!i')

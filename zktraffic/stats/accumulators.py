@@ -22,6 +22,8 @@ by input from the queued stats loader
 
 from collections import defaultdict
 
+from six.moves import intern
+
 
 class TopStatsAccumulator(object):
   def __init__(self, aggregation_depth, include_bytes=True):

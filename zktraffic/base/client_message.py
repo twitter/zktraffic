@@ -16,6 +16,7 @@
 
 
 from collections import namedtuple
+
 import struct
 
 from .util import (
@@ -45,6 +46,8 @@ from .zookeeper import (
   ZK_VALID_PROTOCOL_VERSIONS,
   ZK_WRITE_OPS,
 )
+
+from six.moves import intern
 
 
 class ClientMessageType(type):

@@ -37,6 +37,7 @@ from scapy.config import conf as scapy_conf
 scapy_conf.logLevel = logging.ERROR  # shush scapy
 
 from scapy.sendrecv import sniff
+from six.moves import intern
 from twitter.common import log
 
 
