@@ -16,18 +16,18 @@
 
 import unittest
 
+from zktraffic.base.util import to_bytes
 from zktraffic.base.network import BadPacket
 from zktraffic.fle.message import Message
 
 
 class MessagesTestCase(unittest.TestCase):
   def test_initial_message(self):
-    return
-    payload = ''.join((
-      '\xff\xff\xff\xff\xff\xff\x00\x00',  # proto version: -65536L
-      '\x00\x00\x00\x00\x00\x00\x00\x06',  # server id
-      '\x00\x00\x00\x0e',                  # addr len
-      '127.0.0.1:3888',                    # addr
+    payload = b''.join((
+      b'\xff\xff\xff\xff\xff\xff\x00\x00',  # proto version: -65536L
+      b'\x00\x00\x00\x00\x00\x00\x00\x06',  # server id
+      b'\x00\x00\x00\x0e',                  # addr len
+      b'127.0.0.1:3888',                    # addr
     ))
     init = Message.from_payload(payload, '127.0.0.1:3888', '127.0.0.1:9000', 0)
     self.assertEqual(6, init.server_id)
@@ -85,22 +85,21 @@ class MessagesTestCase(unittest.TestCase):
     self.assertEqual('', notif.config)
 
   def test_notification_v2_with_config(self):
-    return
     config = '%s\n%s\n%s\n%s' % (
       'server.0=10.0.0.1:2889:3888:participant;0.0.0.0:2181',
       'server.0=10.0.0.2:2889:3888:participant;0.0.0.0:2181',
       'server.0=10.0.0.3:2889:3888:participant;0.0.0.0:2181',
       'version=deadbeef'
     )
-    payload = ''.join((
-      '\x00\x00\x00\x01',                  # state
-      '\x00\x00\x00\x00\x00\x00\x00\x03',  # leader
-      '\x00\x00\x00\x00\x00\x00\x20\x00',  # zxid
-      '\x00\x00\x00\x00\x00\x00\x00\x0a',  # election epoch
-      '\x00\x00\x00\x00\x00\x00\x00\x0a',  # peer epoch
-      '\x00\x00\x00\x02',                  # version
-      '\x00\x00\x00\xaf',                  # config length
-      config,
+    payload = b''.join((
+      b'\x00\x00\x00\x01',                  # state
+      b'\x00\x00\x00\x00\x00\x00\x00\x03',  # leader
+      b'\x00\x00\x00\x00\x00\x00\x20\x00',  # zxid
+      b'\x00\x00\x00\x00\x00\x00\x00\x0a',  # election epoch
+      b'\x00\x00\x00\x00\x00\x00\x00\x0a',  # peer epoch
+      b'\x00\x00\x00\x02',                  # version
+      b'\x00\x00\x00\xaf',                  # config length
+      to_bytes(config),
     ))
     notif = Message.from_payload(payload, '127.0.0.1:3888', '127.0.0.1:9000', 0)
     self.assertEqual(1, notif.state)
