@@ -85,6 +85,7 @@ def read_string(data, offset, maxlen=1024, default="unreadable"):
   Note: even though strings are utf-8 decoded, we need to str()
         them since they can't be used by intern() otherwise.
   """
+  data = to_bytes(data)
   old = offset
   length, offset = read_number(data, offset)
 
