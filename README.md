@@ -18,92 +18,91 @@ ZooKeeper protocol analyzer and stats gathering daemon
 
 You can install ZKTraffic via pip:
 
-```
-$ pip install zktraffic
-```
+.. code-block:: bash
+
+   $ pip install zktraffic
 
 Or run it from source (if you have the dependencies installed, see below):
 
-```
-$ git clone https://github.com/twitter/zktraffic.git
-$ cd zktraffic
-$ sudo ZKTRAFFIC_SOURCE=1 bin/zk-dump --iface=eth0
-```
+.. code-block:: bash
+
+   $ git clone https://github.com/twitter/zktraffic.git
+   $ cd zktraffic
+   $ sudo ZKTRAFFIC_SOURCE=1 bin/zk-dump --iface=eth0
 
 To get a quick count of requests by path:
 
-```
-$ sudo ZKTRAFFIC_SOURCE=1 bin/zk-dump --iface=eth0 --count-requests 10000 --sort-by path
-/ 1749
-/services/prod/search 846
-/configs/teleportation/features 843
-```
+.. code-block:: bash
+
+   $ sudo ZKTRAFFIC_SOURCE=1 bin/zk-dump --iface=eth0 --count-requests 10000 --sort-by path
+   / 1749
+   /services/prod/search 846
+   /configs/teleportation/features 843
 
 Or by type:
 
-```
-$ sudo ZKTRAFFIC_SOURCE=1 bin/zk-dump --iface=eth0 --count-requests 10000 --sort-by type
-GetChildrenRequest 9044
-ExistsRequest 958
-```
+.. code-block:: bash
+
+   $ sudo ZKTRAFFIC_SOURCE=1 bin/zk-dump --iface=eth0 --count-requests 10000 --sort-by type
+   GetChildrenRequest 9044
+   ExistsRequest 958
 
 You can also measure latencies by path (avg, p95 and p99):
 
-```
-$ sudo ZKTRAFFIC_SOURCE=1 bin/zk-dump --measure-latency 1000 --group-by path --aggregation-depth 2 --sort-by p99
-path                     avg         p95         p99
----------------  -----------  ----------  ----------
-/party/services  0.000199077  0.00048846  0.00267805
-/party           0.000349498  0.00136839  0.00201204
-/party/configs   0.000157728  0.00036664  0.00122663
-```
+.. code-block:: bash
+
+   $ sudo ZKTRAFFIC_SOURCE=1 bin/zk-dump --measure-latency 1000 --group-by path --aggregation-depth 2 --sort-by p99
+   path                     avg         p95         p99
+   ---------------  -----------  ----------  ----------
+   /party/services  0.000199077  0.00048846  0.00267805
+   /party           0.000349498  0.00136839  0.00201204
+   /party/configs   0.000157728  0.00036664  0.00122663
 
 Or by type:
 
-```
-$ sudo ZKTRAFFIC_SOURCE=1 bin/zk-dump --measure-latency 1000 --group-by type --sort-by p99
-type                            avg          p95          p99
-----------------------  -----------  -----------  -----------
-CreateEphemeralRequest  0.000735009  0.000978041  0.0032404
-GetChildrenRequest      0.000182547  0.000453258  0.00220628
-ExistsRequest           0.000162728  0.000430155  0.000862937
-```
+.. code-block:: bash
+
+   $ sudo ZKTRAFFIC_SOURCE=1 bin/zk-dump --measure-latency 1000 --group-by type --sort-by p99
+   type                            avg          p95          p99
+   ----------------------  -----------  -----------  -----------
+   CreateEphemeralRequest  0.000735009  0.000978041  0.0032404
+   GetChildrenRequest      0.000182547  0.000453258  0.00220628
+   ExistsRequest           0.000162728  0.000430155  0.000862937
 
 Or by client:
 
-```
-$ sudo ZKTRAFFIC_SOURCE=1 bin/zk-dump --measure-latency 1000 --group-by client --sort-by p99
-client                          avg          p95          p99
-----------------------  -----------  -----------  -----------
-10.0.1.3:44308          0.000735009  0.000978041  0.0032404
-10.0.1.6:34305          0.000182547  0.000453258  0.00220628
-10.0.1.9:36110          0.000162728  0.000430155  0.000862937
-```
+.. code-block:: bash
+
+   $ sudo ZKTRAFFIC_SOURCE=1 bin/zk-dump --measure-latency 1000 --group-by client --sort-by p99
+   client                          avg          p95          p99
+   ----------------------  -----------  -----------  -----------
+   10.0.1.3:44308          0.000735009  0.000978041  0.0032404
+   10.0.1.6:34305          0.000182547  0.000453258  0.00220628
+   10.0.1.9:36110          0.000162728  0.000430155  0.000862937
 
 Or use the stats gathering daemon:
 
-```
-$ sudo ZKTRAFFIC_SOURCE=1 bin/zk-stats-daemon --iface=eth0 --http-port=9090
-```
+.. code-block:: bash
+
+   $ sudo ZKTRAFFIC_SOURCE=1 bin/zk-stats-daemon --iface=eth0 --http-port=9090
 
 Or you can build PEX files — from the source — for any of the available tools:
 
-```
-$ pip install pex
+.. code-block:: bash
 
-# zk-dump
-$ pex -v -e zktraffic.cli.zk -o zk-dump.pex .
+   $ pip install pex
 
-# zk-stats-daemon
-$ pex -v -e zktraffic.cli.stats_daemon -o stats-daemon.pex .
+   # zk-dump
+   $ pex -v -e zktraffic.cli.zk -o zk-dump.pex .
 
-# zab-dump
-$ pex -v -e zktraffic.cli.zab -o zab-dump.pex .
+   # zk-stats-daemon
+   $ pex -v -e zktraffic.cli.stats_daemon -o stats-daemon.pex .
 
-# fle-dump
-$ pex -v -e zktraffic.cli.fle -o fle-dump.pex .
+   # zab-dump
+   $ pex -v -e zktraffic.cli.zab -o zab-dump.pex .
 
-```
+   # fle-dump
+   $ pex -v -e zktraffic.cli.fle -o fle-dump.pex .
 
 More info about PEX [here](https://pex.readthedocs.org "PEX").
 
@@ -130,13 +129,14 @@ $ sudo zk-dump --iface eth0
 Or, it can work in daemon mode from which it exposes HTTP/JSON endpoints with
 stats that can be fed into your favourite data collection system:
 
-```
-$ sudo zk-stats-daemon.pex --app_daemonize --aggregation-depth=5
+.. code-block:: bash
 
-# Wait for 1 min and:
+   $ sudo zk-stats-daemon.pex --app_daemonize --aggregation-depth=5
 
-$ sleep 60 && curl http://localhost:7070/json/paths | python -mjson.tool
-{
+   # Wait for 1 min and:
+
+   $ sleep 60 && curl http://localhost:7070/json/paths | python -mjson.tool
+   {
     "ConnectRequest": 2,
     "ConnectRequestBytes": 90,
     "CreateRequest/configs": 2,
@@ -217,9 +217,7 @@ $ sleep 60 && curl http://localhost:7070/json/paths | python -mjson.tool
     "writesBytes/discovery": 114,
     "writesBytes/discovery/hosts": 126,
     "writesBytes/discovery/services": 132
-}
-
-```
+   }
 
 Other relevant endpoints for stats are:
 
@@ -239,9 +237,10 @@ Along with zk-dump and zk-stats-daemon, you can find fle-dump which allows you
 to inspect FastLeaderElection traffic (i.e.: the protocol by which ZooKeeper decides
 who will lead and the mechanism by which the leader is subsequently discovered):
 
-```
-$ sudo fle-dump --iface eth0 -c
-Notification(
+.. code-block:: bash
+
+   $ sudo fle-dump --iface eth0 -c
+   Notification(
      timestamp=00:57:12:593254,
      src=10.0.0.1:32938,
      dst=10.0.0.2:3888,
@@ -257,8 +256,8 @@ Notification(
           server.3=10.0.0.4:2889:3888:participant;0.0.0.0:2181
           server.4=10.0.0.5:2889:3888:participant;0.0.0.0:2181
           version=10010d4d6
-)
-Notification(
+   )
+   Notification(
      timestamp=00:57:12:595525,
      src=10.0.0.2:3888,
      dst=10.0.0.1:32938,
@@ -274,10 +273,8 @@ Notification(
           server.3=10.0.0.4:2889:3888:participant;0.0.0.0:2181
           server.4=10.0.0.5:2889:3888:participant;0.0.0.0:2181
           version=10010d4d6
-)
-...
-
-```
+   )
+   ...
 
 Note: for initial messages to be visible you'll need the patch available
 at [ZOOKEEPER-2098](https://issues.apache.org/jira/browse/ZOOKEEPER-2098 "ZOOKEEPER-2098"),
@@ -288,107 +285,105 @@ Note: if you are using Linux 3.14 or later, you'll need to disable [TCP Auto Cor
 If you are interested in debugging ZAB (ZooKeeper Atomic Broadcast protocol), you can use
 zab-dump:
 
-```
-$ sudo zab-dump --iface eth0
+.. code-block:: bash
 
-Request(
- cxid=6,
- dst=10.0.0.1:2889,
- length=112,
- req_type=CreateRequest,
- session_id=0x34e4d23b0d70001,
- src=10.0.0.2:48604,
- timestr=22:54:31:995353,
- zxid=-1,
-)
-Proposal(
- cxid=6,
- dst=10.0.0.2:48603,
- length=110,
- session_id=0x34e4d23b0d70001,
- src=10.0.0.1:2889,
- timestr=22:54:31:995753,
- txn_time=1435816471995,
- txn_type=CreateRequest,
- txn_zxid=8589934619,
- zxid=8589934619,
-)
-Proposal(
- cxid=6,
- dst=10.0.0.1:48604,
- length=110,
- session_id=0x34e4d23b0d70001,
- src=10.0.0.1:2889,
- timestr=22:54:31:995755,
- txn_time=1435816471995,
- txn_type=CreateRequest,
- txn_zxid=8589934619,
- zxid=8589934619,
-)
-Proposal(
- cxid=6,
- dst=10.0.0.3:48605,
- length=110,
- session_id=0x34e4d23b0d70001,
- src=10.0.0.1:2889,
- timestr=22:54:31:995770,
- txn_time=1435816471995,
- txn_type=CreateRequest,
- txn_zxid=8589934619,
- zxid=8589934619,
-)
-Ack(
- dst=10.0.0.1:2889,
- length=20,
- src=10.0.0.1:48603,
- timestr=22:54:31:996068,
- zxid=8589934619,
-)
-Ack(
- dst=10.0.0.1:2889,
- length=20,
- src=10.0.0.1:48604,
- timestr=22:54:31:996316,
- zxid=8589934619,
-)
-Ack(
- dst=10.0.0.1:2889,
- length=20,
- src=10.0.0.1:48604,
- timestr=22:54:31:996318,
- zxid=8589934619,
-)
-Commit(
- dst=10.0.0.1:48603,
- length=20,
- src=10.0.0.1:2889,
- timestr=22:54:31:996193,
- zxid=8589934619,
-)
-Commit(
- dst=10.0.0.2:48604,
- length=20,
- src=10.0.0.1:2889,
- timestr=22:54:31:996195,
- zxid=8589934619,
-)
-Commit(
- dst=10.0.0.2:48605,
- length=20,
- src=10.0.0.1:2889,
- timestr=22:54:31:996442,
- zxid=8589934619,
-)
-...
+   $ sudo zab-dump --iface eth0
 
-```
+   Request(
+    cxid=6,
+    dst=10.0.0.1:2889,
+    length=112,
+    req_type=CreateRequest,
+    session_id=0x34e4d23b0d70001,
+    src=10.0.0.2:48604,
+    timestr=22:54:31:995353,
+    zxid=-1,
+   )
+   Proposal(
+    cxid=6,
+    dst=10.0.0.2:48603,
+    length=110,
+    session_id=0x34e4d23b0d70001,
+    src=10.0.0.1:2889,
+    timestr=22:54:31:995753,
+    txn_time=1435816471995,
+    txn_type=CreateRequest,
+    txn_zxid=8589934619,
+    zxid=8589934619,
+   )
+   Proposal(
+    cxid=6,
+    dst=10.0.0.1:48604,
+    length=110,
+    session_id=0x34e4d23b0d70001,
+    src=10.0.0.1:2889,
+    timestr=22:54:31:995755,
+    txn_time=1435816471995,
+    txn_type=CreateRequest,
+    txn_zxid=8589934619,
+    zxid=8589934619,
+   )
+   Proposal(
+    cxid=6,
+    dst=10.0.0.3:48605,
+    length=110,
+    session_id=0x34e4d23b0d70001,
+    src=10.0.0.1:2889,
+    timestr=22:54:31:995770,
+    txn_time=1435816471995,
+    txn_type=CreateRequest,
+    txn_zxid=8589934619,
+    zxid=8589934619,
+   )
+   Ack(
+    dst=10.0.0.1:2889,
+    length=20,
+    src=10.0.0.1:48603,
+    timestr=22:54:31:996068,
+    zxid=8589934619,
+   )
+   Ack(
+    dst=10.0.0.1:2889,
+    length=20,
+    src=10.0.0.1:48604,
+    timestr=22:54:31:996316,
+    zxid=8589934619,
+   )
+   Ack(
+    dst=10.0.0.1:2889,
+    length=20,
+    src=10.0.0.1:48604,
+    timestr=22:54:31:996318,
+    zxid=8589934619,
+   )
+   Commit(
+    dst=10.0.0.1:48603,
+    length=20,
+    src=10.0.0.1:2889,
+    timestr=22:54:31:996193,
+    zxid=8589934619,
+   )
+   Commit(
+    dst=10.0.0.2:48604,
+    length=20,
+    src=10.0.0.1:2889,
+    timestr=22:54:31:996195,
+    zxid=8589934619,
+   )
+   Commit(
+    dst=10.0.0.2:48605,
+    length=20,
+    src=10.0.0.1:2889,
+    timestr=22:54:31:996442,
+    zxid=8589934619,
+   )
 
 ### OS X ###
 Although no one has tried running this on OS X in production, it can be used for some parts of development and unit testing. If you are running on OS X, please run the following to install the correct dependencies:
 
-```sh
-$ pip install -r ./osx_requirements.txt
-```
+.. code-block:: bash
+
+   $ pip install -r ./osx_requirements.txt
 
 ### Dependencies ###
 * Python 2.7 (Py3K soon)
