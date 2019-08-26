@@ -58,13 +58,13 @@ def main(_, options):
   zk_printer.start()
 
   def fle_sniffer_factory(port):
-    return Sniffer('dummy', port, FLE.Message, printer.add, options.dump_bad_packet, start=False)
+    return Sniffer(None, port, FLE.Message, printer.add, options.dump_bad_packet, start=False)
 
   def zab_sniffer_factory(port):
-    return Sniffer('dummy', port, ZAB.QuorumPacket, printer.add, options.dump_bad_packet, start=False)
+    return Sniffer(None, port, ZAB.QuorumPacket, printer.add, options.dump_bad_packet, start=False)
 
   def zk_sniffer_factory(port):
-    config = ZKSnifferConfig('dummy')
+    config = ZKSnifferConfig(None)
     config.track_replies = True
     config.zookeeper_port = port
     config.client_port = 0

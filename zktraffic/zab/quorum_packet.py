@@ -16,6 +16,8 @@
 
 from datetime import datetime
 
+from six import string_types
+
 from zktraffic.base.network import BadPacket
 from zktraffic.base.util import read_long, read_number
 from zktraffic.base.zookeeper import ZK_REQUEST_TYPES
@@ -139,7 +141,7 @@ class QuorumPacket(QuorumPacketBase("QuorumPacketBase", (object,), {})):
   def __str__(self):
     def attributes():
       def valid(key, value):
-        if not isinstance(value, int) and not isinstance(value, basestring):
+        if not isinstance(value, int) and not isinstance(value, string_types):
           return False
 
         if key.isupper() or key.startswith("_") or "_literal" in key or key == "type":
@@ -154,7 +156,7 @@ class QuorumPacket(QuorumPacketBase("QuorumPacketBase", (object,), {})):
           if hasattr(self, alt_key):
             value = getattr(self, alt_key)
           yield key, value
-          
+
     parts = ["%s(" % self.__class__.__name__]
     for name, value in attributes():
         parts.append(" %s=%s," % (name, value))

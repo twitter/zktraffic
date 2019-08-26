@@ -42,7 +42,7 @@ LEADER_PORT = 20022
 
 def run_sniffer(handler, pcapfile, port=LEADER_PORT):
   sniffer = Sniffer(
-    iface="test",
+    iface=None,
     port=port,
     msg_cls=QuorumPacket,
     handler=handler,
@@ -55,10 +55,10 @@ def run_sniffer(handler, pcapfile, port=LEADER_PORT):
 
 class ZabTestCase(unittest.TestCase):
   def test_basic(self):
-    payload = ''.join((
-      '\x00\x00\x00\x02',                  # type
-      '\x00\x00\x00\x00\x00\x00\x07\xd0',  # zxid
-      'cchenwashere',                      # data
+    payload = b''.join((
+      b'\x00\x00\x00\x02',                  # type
+      b'\x00\x00\x00\x00\x00\x00\x07\xd0',  # zxid
+      b'cchenwashere',                      # data
     ))
     packet = QuorumPacket.from_payload(payload, '127.0.0.1:2889', '127.0.0.1:10000', 0)
     self.assertEqual(PacketType.PROPOSAL, packet.type)

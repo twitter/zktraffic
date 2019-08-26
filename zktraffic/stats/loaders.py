@@ -30,6 +30,7 @@ from zktraffic.base.deque import Deque
 
 from .timer import Timer
 
+from six.moves import intern
 from twitter.common import log
 from twitter.common.exceptions import ExceptionalThread
 

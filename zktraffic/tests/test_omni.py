@@ -42,13 +42,13 @@ class OmniTestCase(unittest.TestCase):
 
   def get_sniffer(self):
     def fle_sniffer_factory(port):
-     return Sniffer('dummy', port, FLE.Message, None, dump_bad_packet=False, start=False)
+     return Sniffer(None, port, FLE.Message, None, dump_bad_packet=False, start=False)
 
     def zab_sniffer_factory(port):
-     return Sniffer('dummy', port, ZAB.QuorumPacket, None, dump_bad_packet=False, start=False)
+     return Sniffer(None, port, ZAB.QuorumPacket, None, dump_bad_packet=False, start=False)
 
     def zk_sniffer_factory(port):
-      config = ZKSnifferConfig('dummy')
+      config = ZKSnifferConfig(None)
       config.track_replies = True
       config.zookeeper_port = port
       config.client_port = 0

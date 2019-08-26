@@ -31,22 +31,33 @@ from .client_message import ClientMessage, Request
 from .network import BadPacket, get_ip, get_ip_packet, SnifferBase
 from .server_message import Reply, ServerMessage, WatchEvent
 from .zookeeper import DeserializationError, OpCodes
-from .util import StringTooLong
+from .util import StringTooLong, to_bytes
 
 from scapy.config import conf as scapy_conf
 scapy_conf.logLevel = logging.ERROR  # shush scapy
 
 from scapy.sendrecv import sniff
+from six.moves import intern
 from twitter.common import log
 
 
 DEFAULT_PORT = 2181
 FOUR_LETTER_WORDS = (
-  'conf', 'cons', 'crst', 'dump', 'envi',
-  'ruok', 'srst', 'srvr', 'stat', 'wchs',
-  'wchc', 'wchp', 'mntr',
-  'kill',  # deprecated
-  'reqs'   # deprecated
+  to_bytes('conf'),
+  to_bytes('cons'),
+  to_bytes('crst'),
+  to_bytes('dump'),
+  to_bytes('envi'),
+  to_bytes('ruok'),
+  to_bytes('srst'),
+  to_bytes('srvr'),
+  to_bytes('stat'),
+  to_bytes('wchs'),
+  to_bytes('wchc'),
+  to_bytes('wchp'),
+  to_bytes('mntr'),
+  to_bytes('kill'),  # deprecated
+  to_bytes('reqs'),  # deprecated
 )
 
 

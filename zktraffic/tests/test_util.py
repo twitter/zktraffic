@@ -21,6 +21,6 @@ from zktraffic.base.util import read_string
 
 
 def test_bad_unicode():
-    bad = u'0\xf5'.encode('utf-8')
+    bad = b'0\xf5'
     data = struct.Struct('!i').pack(len(bad)) + bad
     assert read_string(data, 0)[0] == "unreadable"

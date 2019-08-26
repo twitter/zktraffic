@@ -30,11 +30,12 @@ from .printer import (
 from zktraffic import __version__
 from zktraffic.base.sniffer import Sniffer, SnifferConfig
 
-from twitter.common import app
 from twitter.common.log.options import LogOptions
 
 
 def setup():
+  from twitter.common import app
+
   LogOptions.set_stderr_log_level('NONE')
 
   app.add_option('--iface', default='eth0', type=str, metavar='<iface>',
@@ -201,5 +202,6 @@ def main(_, options):
 
 
 if __name__ == '__main__':
+  from twitter.common import app
   setup()
   app.main()

@@ -396,7 +396,7 @@ $ pip install -r ./osx_requirements.txt
 * dpkt-fix
 * hexdump
 * psutil>=2.1.0
-* scapy==2.3.1
+* scapy==2.4.2
 * six
 * twitter.common.app
 * twitter.common.collections
